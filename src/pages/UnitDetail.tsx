@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getUnit } from '../api/openHammerApi'
+import { useFavorites } from '../hooks/useFavorites'
 import type { Unit, UnitStats, UnitWeapon } from '../types/unit'
 
 const statLabels: Array<[keyof UnitStats, string]> = [
@@ -83,6 +84,7 @@ function UnitDetail() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [requestNumber, setRequestNumber] = useState(0)
+  const { isFavorite, toggleFavorite } = useFavorites()
 
   let unitIdentifier: string | null = null
 
@@ -197,6 +199,17 @@ function UnitDetail() {
           <p className="unit-detail__type">{unit.factionType}</p>
           <h1 id="unit-heading">{unit.name}</h1>
           <p className="unit-detail__faction">{unit.faction}</p>
+
+          <button
+            className="favorite-button"
+            type="button"
+            aria-pressed={isFavorite(unit)}
+            onClick={() => toggleFavorite(unit)}
+          >
+            {isFavorite(unit)
+              ? 'Remove from favorites'
+              : 'Add to favorites'}
+          </button>
 
           {unit.basePoints !== undefined && (
             <p className="unit-detail__points">

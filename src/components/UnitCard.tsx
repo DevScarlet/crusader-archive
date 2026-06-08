@@ -3,6 +3,8 @@ import type { Unit, UnitStats } from '../types/unit'
 
 interface UnitCardProps {
   unit: Unit
+  isFavorite?: boolean
+  onToggleFavorite?: (unit: Unit) => void
 }
 
 const statLabels: Array<[keyof UnitStats, string]> = [
@@ -14,18 +16,22 @@ const statLabels: Array<[keyof UnitStats, string]> = [
   ['objectiveControl', 'OC'],
 ]
 
-function UnitCard({ unit }: UnitCardProps) {
+function UnitCard({
+  unit,
+  isFavorite = false,
+  onToggleFavorite,
+}: UnitCardProps) {
   const unitIdentifier = unit.id ?? unit.name
   const availableStats = statLabels.filter(
     ([statName]) => unit.stats?.[statName] !== undefined,
   )
 
   return (
-    <Link
-      className="unit-card"
-      to={`/units/${encodeURIComponent(unitIdentifier)}`}
-    >
-      <article>
+    <article className="unit-card">
+      <Link
+        className="unit-card__link"
+        to={`/units/${encodeURIComponent(unitIdentifier)}`}
+      >
         <p className="unit-card__type">{unit.factionType}</p>
         <h2>{unit.name}</h2>
         <p className="unit-card__faction">{unit.faction}</p>
@@ -48,8 +54,19 @@ function UnitCard({ unit }: UnitCardProps) {
         )}
 
         <span className="card-link-text">View unit</span>
-      </article>
-    </Link>
+      </Link>
+
+      {onToggleFavorite && (
+        <button
+          className="favorite-button"
+          type="button"
+          aria-pressed={isFavorite}
+          onClick={() => onToggleFavorite(unit)}
+        >
+          {isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        </button>
+      )}
+    </article>
   )
 }
 

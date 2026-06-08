@@ -207,7 +207,6 @@ a:focus-visible {
 }
 
 .unit-card {
-  display: block;
   padding: 1.25rem;
   border: 1px solid #ddddda;
   border-radius: 0.5rem;
@@ -216,6 +215,11 @@ a:focus-visible {
   transition:
     border-color 150ms ease,
     transform 150ms ease;
+}
+
+.unit-card__link {
+  display: block;
+  text-decoration: none;
 }
 
 .unit-card:hover {
@@ -277,6 +281,25 @@ a:focus-visible {
 .unit-card .card-link-text {
   display: inline-block;
   margin-top: 1rem;
+}
+
+.favorite-button {
+  margin-top: 1rem;
+  color: #202124;
+  background: #e8e8e4;
+}
+
+.favorite-button:hover {
+  background: #d6d6cf;
+}
+
+.favorite-button[aria-pressed="true"] {
+  color: #ffffff;
+  background: #6f2020;
+}
+
+.favorite-button[aria-pressed="true"]:hover {
+  background: #8b2929;
 }
 
 .unit-detail__type {

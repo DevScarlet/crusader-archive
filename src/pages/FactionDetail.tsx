@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getUnitsByFaction } from '../api/openHammerApi'
 import UnitCard from '../components/UnitCard'
+import { useFavorites } from '../hooks/useFavorites'
 import type { Unit } from '../types/unit'
 
 type SortOption = 'name-asc' | 'name-desc' | 'points-asc' | 'points-desc'
@@ -17,6 +18,7 @@ function FactionDetail() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('name-asc')
+  const { isFavorite, toggleFavorite } = useFavorites()
 
   let factionName: string | null = null
 
@@ -212,6 +214,8 @@ function FactionDetail() {
                 <UnitCard
                   key={unit.id ?? `${unit.name}-${index}`}
                   unit={unit}
+                  isFavorite={isFavorite(unit)}
+                  onToggleFavorite={toggleFavorite}
                 />
               ))}
             </div>
