@@ -4,6 +4,8 @@ import { getUnitsByFaction } from '../api/openHammerApi'
 import UnitCard from '../components/UnitCard'
 import type { Unit } from '../types/unit'
 
+type SortOption = 'name-asc' | 'name-desc' | 'points-asc' | 'points-desc'
+
 function FactionDetail() {
   const { factionName: encodedFactionName } = useParams<{
     factionName: string
@@ -12,6 +14,9 @@ function FactionDetail() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [requestNumber, setRequestNumber] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedType, setSelectedType] = useState('')
+  const [sortOption, setSortOption] = useState<SortOption>('name-asc')
 
   let factionName: string | null = null
 
@@ -65,6 +70,49 @@ function FactionDetail() {
     setRequestNumber((currentRequest) => currentRequest + 1)
   }
 
+  function clearFilters() {
+    setSearchTerm('')
+    setSelectedType('')
+    setSortOption('name-asc')
+  }
+
+  const factionTypes = Array.from(
+    new Set(units.map((unit) => unit.factionType)),
+  ).sort((firstType, secondType) => firstType.localeCompare(secondType))
+
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+  const visibleUnits = units
+    .filter((unit) => {
+      const matchesSearch = unit.name
+        .toLowerCase()
+        .includes(normalizedSearchTerm)
+      const matchesType =
+        selectedType === '' || unit.factionType === selectedType
+
+      return matchesSearch && matchesType
+    })
+    .sort((firstUnit, secondUnit) => {
+      if (sortOption === 'name-asc') {
+        return firstUnit.name.localeCompare(secondUnit.name)
+      }
+
+      if (sortOption === 'name-desc') {
+        return secondUnit.name.localeCompare(firstUnit.name)
+      }
+
+      if (firstUnit.basePoints === undefined) {
+        return secondUnit.basePoints === undefined ? 0 : 1
+      }
+
+      if (secondUnit.basePoints === undefined) {
+        return -1
+      }
+
+      return sortOption === 'points-asc'
+        ? firstUnit.basePoints - secondUnit.basePoints
+        : secondUnit.basePoints - firstUnit.basePoints
+    })
+
   return (
     <section aria-labelledby="faction-heading">
       <Link className="back-link" to="/factions">
@@ -100,11 +148,75 @@ function FactionDetail() {
       )}
 
       {factionName && !isLoading && !errorMessage && units.length > 0 && (
-        <div className="unit-grid">
-          {units.map((unit, index) => (
-            <UnitCard key={unit.id ?? `${unit.name}-${index}`} unit={unit} />
-          ))}
-        </div>
+        <>
+          <div className="unit-controls">
+            <div className="form-field unit-controls__search">
+              <label htmlFor="unit-search">Search units</label>
+              <input
+                id="unit-search"
+                type="search"
+                placeholder="Search by unit name"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="faction-type-filter">Faction type</label>
+              <select
+                id="faction-type-filter"
+                value={selectedType}
+                onChange={(event) => setSelectedType(event.target.value)}
+              >
+                <option value="">All types</option>
+                {factionTypes.map((factionType) => (
+                  <option key={factionType} value={factionType}>
+                    {factionType}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="unit-sort">Sort by</label>
+              <select
+                id="unit-sort"
+                value={sortOption}
+                onChange={(event) =>
+                  setSortOption(event.target.value as SortOption)
+                }
+              >
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="points-asc">Points low-high</option>
+                <option value="points-desc">Points high-low</option>
+              </select>
+            </div>
+
+            <button type="button" onClick={clearFilters}>
+              Clear filters
+            </button>
+          </div>
+
+          <p className="results-count" role="status">
+            Showing {visibleUnits.length} of {units.length} units
+          </p>
+
+          {visibleUnits.length === 0 ? (
+            <p className="status-message">
+              No units match the current search and filters.
+            </p>
+          ) : (
+            <div className="unit-grid">
+              {visibleUnits.map((unit, index) => (
+                <UnitCard
+                  key={unit.id ?? `${unit.name}-${index}`}
+                  unit={unit}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   )
