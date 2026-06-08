@@ -15,7 +15,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/factions" element={<Factions />} />
           <Route path="/factions/:factionName" element={<FactionDetail />} />
-          <Route path="/units/:unitId" element={<UnitDetail />} />
+          <Route path="/units/:unitIdentifier" element={<UnitDetail />} />
           <Route path="/favorites" element={<Favorites />} />
         </Routes>
       </main>

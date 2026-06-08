@@ -162,10 +162,20 @@ a:focus-visible {
 }
 
 .unit-card {
+  display: block;
   padding: 1.25rem;
   border: 1px solid #ddddda;
   border-radius: 0.5rem;
   background: #ffffff;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.unit-card:hover {
+  border-color: #777777;
+  transform: translateY(-0.125rem);
 }
 
 .unit-card h2 {
@@ -217,4 +227,91 @@ a:focus-visible {
   margin: 0;
   padding: 0.5rem 0.375rem;
   font-weight: 700;
+}
+
+.unit-card .card-link-text {
+  display: inline-block;
+  margin-top: 1rem;
+}
+
+.unit-detail__type {
+  margin-bottom: 0.25rem;
+  color: #666666;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.unit-detail__faction {
+  margin-top: -0.5rem;
+  color: #555555;
+}
+
+.unit-detail__points {
+  font-size: 1.125rem;
+}
+
+.unit-detail__stats {
+  max-width: 36rem;
+  margin: 1.5rem 0;
+}
+
+.detail-section {
+  margin-top: 2.5rem;
+}
+
+.weapon-list,
+.ability-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.weapon-card,
+.ability-list article {
+  padding: 1rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.weapon-card h3,
+.ability-list h3 {
+  margin-top: 0;
+}
+
+.weapon-card dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.weapon-card dl div {
+  min-width: 3rem;
+}
+
+.weapon-card dt {
+  color: #666666;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.weapon-card dd {
+  margin: 0.125rem 0 0;
+  font-weight: 700;
+}
+
+.keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.keyword-list li {
+  padding: 0.375rem 0.625rem;
+  border-radius: 999px;
+  background: #e8e8e4;
 }

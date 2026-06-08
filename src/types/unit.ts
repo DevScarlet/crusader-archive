@@ -7,6 +7,22 @@ export interface UnitStats {
   objectiveControl?: string
 }
 
+export interface UnitWeapon {
+  name: string
+  range?: string
+  attacks?: string
+  skill?: string
+  strength?: string
+  armorPenetration?: string
+  damage?: string
+  keywords?: string
+}
+
+export interface UnitAbility {
+  name: string
+  description?: string
+}
+
 export interface Unit {
   id?: string
   name: string
@@ -14,4 +30,8 @@ export interface Unit {
   factionType: string
   basePoints?: number
   stats?: UnitStats
+  rangedWeapons?: UnitWeapon[]
+  meleeWeapons?: UnitWeapon[]
+  abilities?: UnitAbility[]
+  keywords?: string[]
 }
