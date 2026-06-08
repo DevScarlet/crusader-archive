@@ -116,10 +116,20 @@ a:focus-visible {
 }
 
 .faction-card {
+  display: block;
   padding: 1.25rem;
   border: 1px solid #ddddda;
   border-radius: 0.5rem;
   background: #ffffff;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.faction-card:hover {
+  border-color: #777777;
+  transform: translateY(-0.125rem);
 }
 
 .faction-card h2 {
@@ -136,6 +146,75 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
-.faction-card a {
+.card-link-text {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+.unit-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.unit-card {
+  padding: 1.25rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.unit-card h2 {
+  margin: 0.25rem 0;
+  font-size: 1.25rem;
+}
+
+.unit-card__type {
+  margin: 0;
+  color: #666666;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.unit-card__faction {
+  margin-top: 0;
+  color: #555555;
+}
+
+.unit-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(3rem, 1fr));
+  margin: 1rem 0 0;
+  overflow-x: auto;
+  border: 1px solid #ddddda;
+  border-radius: 0.375rem;
+}
+
+.unit-stats div {
+  min-width: 3rem;
+  text-align: center;
+}
+
+.unit-stats div + div {
+  border-left: 1px solid #ddddda;
+}
+
+.unit-stats dt {
+  padding: 0.375rem;
+  color: #ffffff;
+  background: #444444;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.unit-stats dd {
+  margin: 0;
+  padding: 0.5rem 0.375rem;
   font-weight: 700;
 }

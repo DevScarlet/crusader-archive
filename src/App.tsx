@@ -14,7 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/factions" element={<Factions />} />
-          <Route path="/factions/:factionId" element={<FactionDetail />} />
+          <Route path="/factions/:factionName" element={<FactionDetail />} />
           <Route path="/units/:unitId" element={<UnitDetail />} />
           <Route path="/favorites" element={<Favorites />} />
         </Routes>
