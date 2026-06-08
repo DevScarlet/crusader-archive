@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import type { Faction } from '../types/faction'
 import type { Unit, UnitStats } from '../types/unit'
 
-const FAVORITES_STORAGE_KEY = 'crusader-archive-favorites'
+const UNIT_FAVORITES_STORAGE_KEY = 'crusader-archive-favorites'
+const FACTION_FAVORITES_STORAGE_KEY = 'crusader-archive-favorite-factions'
 const FAVORITES_UPDATED_EVENT = 'crusader-archive-favorites-updated'
 
 function getUnitKey(unit: Unit): string {
@@ -29,7 +31,7 @@ function parseStats(value: unknown): UnitStats | undefined {
   }
 }
 
-function parseFavorite(value: unknown): Unit | null {
+function parseFavoriteUnit(value: unknown): Unit | null {
   if (typeof value !== 'object' || value === null) {
     return null
   }
@@ -57,9 +59,31 @@ function parseFavorite(value: unknown): Unit | null {
   }
 }
 
-function readFavorites(): Unit[] {
+function parseFavoriteFaction(value: unknown): Faction | null {
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+
+  const favorite = value as Record<string, unknown>
+
+  if (
+    typeof favorite.name !== 'string' ||
+    typeof favorite.factionType !== 'string' ||
+    typeof favorite.unitCount !== 'number'
+  ) {
+    return null
+  }
+
+  return {
+    name: favorite.name,
+    factionType: favorite.factionType,
+    unitCount: favorite.unitCount,
+  }
+}
+
+function readFavoriteUnits(): Unit[] {
   try {
-    const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY)
+    const storedFavorites = localStorage.getItem(UNIT_FAVORITES_STORAGE_KEY)
 
     if (!storedFavorites) {
       return []
@@ -72,24 +96,49 @@ function readFavorites(): Unit[] {
     }
 
     return parsedFavorites
-      .map(parseFavorite)
+      .map(parseFavoriteUnit)
       .filter((favorite): favorite is Unit => favorite !== null)
   } catch {
     return []
   }
 }
 
-function saveFavorites(favorites: Unit[]): void {
-  localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites))
+function readFavoriteFactions(): Faction[] {
+  try {
+    const storedFavorites = localStorage.getItem(FACTION_FAVORITES_STORAGE_KEY)
+
+    if (!storedFavorites) {
+      return []
+    }
+
+    const parsedFavorites: unknown = JSON.parse(storedFavorites)
+
+    if (!Array.isArray(parsedFavorites)) {
+      return []
+    }
+
+    return parsedFavorites
+      .map(parseFavoriteFaction)
+      .filter((favorite): favorite is Faction => favorite !== null)
+  } catch {
+    return []
+  }
+}
+
+function notifyFavoritesUpdated(): void {
   window.dispatchEvent(new Event(FAVORITES_UPDATED_EVENT))
 }
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<Unit[]>(readFavorites)
+  const [favoriteUnits, setFavoriteUnits] =
+    useState<Unit[]>(readFavoriteUnits)
+  const [favoriteFactions, setFavoriteFactions] =
+    useState<Faction[]>(readFavoriteFactions)
 
   useEffect(() => {
     function refreshFavorites() {
-      setFavorites(readFavorites())
+      setFavoriteUnits(readFavoriteUnits())
+      setFavoriteFactions(readFavoriteFactions())
     }
 
     window.addEventListener('storage', refreshFavorites)
@@ -103,18 +152,20 @@ export function useFavorites() {
 
   function isFavorite(unit: Unit): boolean {
     const unitKey = getUnitKey(unit)
-    return favorites.some((favorite) => getUnitKey(favorite) === unitKey)
+    return favoriteUnits.some((favorite) => getUnitKey(favorite) === unitKey)
   }
 
   function addFavorite(unit: Unit): void {
-    const currentFavorites = readFavorites()
+    const currentFavorites = readFavoriteUnits()
     const unitKey = getUnitKey(unit)
 
     if (currentFavorites.some((favorite) => getUnitKey(favorite) === unitKey)) {
       return
     }
 
-    saveFavorites([
+    localStorage.setItem(
+      UNIT_FAVORITES_STORAGE_KEY,
+      JSON.stringify([
       ...currentFavorites,
       {
         id: unit.id,
@@ -124,16 +175,22 @@ export function useFavorites() {
         basePoints: unit.basePoints,
         stats: unit.stats,
       },
-    ])
+      ]),
+    )
+    notifyFavoritesUpdated()
   }
 
   function removeFavorite(unit: Unit): void {
     const unitKey = getUnitKey(unit)
-    const remainingFavorites = readFavorites().filter(
+    const remainingFavorites = readFavoriteUnits().filter(
       (favorite) => getUnitKey(favorite) !== unitKey,
     )
 
-    saveFavorites(remainingFavorites)
+    localStorage.setItem(
+      UNIT_FAVORITES_STORAGE_KEY,
+      JSON.stringify(remainingFavorites),
+    )
+    notifyFavoritesUpdated()
   }
 
   function toggleFavorite(unit: Unit): void {
@@ -144,10 +201,35 @@ export function useFavorites() {
     }
   }
 
+  function isFactionFavorite(faction: Faction): boolean {
+    return favoriteFactions.some(
+      (favorite) => favorite.name === faction.name,
+    )
+  }
+
+  function toggleFactionFavorite(faction: Faction): void {
+    const currentFavorites = readFavoriteFactions()
+    const alreadyFavorite = currentFavorites.some(
+      (favorite) => favorite.name === faction.name,
+    )
+    const updatedFavorites = alreadyFavorite
+      ? currentFavorites.filter((favorite) => favorite.name !== faction.name)
+      : [...currentFavorites, faction]
+
+    localStorage.setItem(
+      FACTION_FAVORITES_STORAGE_KEY,
+      JSON.stringify(updatedFavorites),
+    )
+    notifyFavoritesUpdated()
+  }
+
   return {
-    favorites,
+    favoriteUnits,
+    favoriteFactions,
     isFavorite,
     toggleFavorite,
     removeFavorite,
+    isFactionFavorite,
+    toggleFactionFavorite,
   }
 }

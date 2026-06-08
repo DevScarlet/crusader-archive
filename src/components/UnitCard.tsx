@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Unit, UnitStats } from '../types/unit'
+import FavoriteButton from './FavoriteButton'
 
 interface UnitCardProps {
   unit: Unit
@@ -28,12 +29,25 @@ function UnitCard({
 
   return (
     <article className="unit-card">
-      <Link
-        className="unit-card__link"
-        to={`/units/${encodeURIComponent(unitIdentifier)}`}
-      >
-        <p className="unit-card__type">{unit.factionType}</p>
-        <h2>{unit.name}</h2>
+      <div className="card-heading-row">
+        <Link
+          className="unit-card__heading-link"
+          to={`/units/${encodeURIComponent(unitIdentifier)}`}
+        >
+          <p className="unit-card__type">{unit.factionType}</p>
+          <h2>{unit.name}</h2>
+        </Link>
+
+        {onToggleFavorite && (
+          <FavoriteButton
+            isFavorite={isFavorite}
+            label={unit.name}
+            onClick={() => onToggleFavorite(unit)}
+          />
+        )}
+      </div>
+
+      <div>
         <p className="unit-card__faction">{unit.faction}</p>
 
         {unit.basePoints !== undefined && (
@@ -53,19 +67,13 @@ function UnitCard({
           </dl>
         )}
 
-        <span className="card-link-text">View unit</span>
-      </Link>
-
-      {onToggleFavorite && (
-        <button
-          className="favorite-button"
-          type="button"
-          aria-pressed={isFavorite}
-          onClick={() => onToggleFavorite(unit)}
+        <Link
+          className="card-link-text"
+          to={`/units/${encodeURIComponent(unitIdentifier)}`}
         >
-          {isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        </button>
-      )}
+          View unit
+        </Link>
+      </div>
     </article>
   )
 }

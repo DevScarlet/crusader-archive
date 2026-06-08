@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getFactions } from '../api/openHammerApi'
 import FactionCard from '../components/FactionCard'
+import { useFavorites } from '../hooks/useFavorites'
 import type { Faction } from '../types/faction'
 
 function Factions() {
@@ -8,6 +9,7 @@ function Factions() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [requestNumber, setRequestNumber] = useState(0)
+  const { isFactionFavorite, toggleFactionFavorite } = useFavorites()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -72,7 +74,12 @@ function Factions() {
       {!isLoading && !errorMessage && factions.length > 0 && (
         <div className="faction-grid">
           {factions.map((faction) => (
-            <FactionCard key={faction.name} faction={faction} />
+            <FactionCard
+              key={faction.name}
+              faction={faction}
+              isFavorite={isFactionFavorite(faction)}
+              onToggleFavorite={toggleFactionFavorite}
+            />
           ))}
         </div>
       )}

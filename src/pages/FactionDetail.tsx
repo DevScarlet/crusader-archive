@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getUnitsByFaction } from '../api/openHammerApi'
+import FavoriteButton from '../components/FavoriteButton'
 import UnitCard from '../components/UnitCard'
 import { useFavorites } from '../hooks/useFavorites'
+import type { Faction } from '../types/faction'
 import type { Unit } from '../types/unit'
 
 type SortOption = 'name-asc' | 'name-desc' | 'points-asc' | 'points-desc'
@@ -18,7 +20,12 @@ function FactionDetail() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('name-asc')
-  const { isFavorite, toggleFavorite } = useFavorites()
+  const {
+    isFavorite,
+    toggleFavorite,
+    isFactionFavorite,
+    toggleFactionFavorite,
+  } = useFavorites()
 
   let factionName: string | null = null
 
@@ -115,12 +122,30 @@ function FactionDetail() {
         : secondUnit.basePoints - firstUnit.basePoints
     })
 
+  const selectedFaction: Faction | null =
+    factionName && units.length > 0
+      ? {
+          name: factionName,
+          factionType: units[0].factionType,
+          unitCount: units.length,
+        }
+      : null
+
   return (
     <section aria-labelledby="faction-heading">
       <Link className="back-link" to="/factions">
         Back to factions
       </Link>
-      <h1 id="faction-heading">{factionName ?? 'Faction'}</h1>
+      <div className="page-heading-row">
+        <h1 id="faction-heading">{factionName ?? 'Faction'}</h1>
+        {selectedFaction && (
+          <FavoriteButton
+            isFavorite={isFactionFavorite(selectedFaction)}
+            label={selectedFaction.name}
+            onClick={() => toggleFactionFavorite(selectedFaction)}
+          />
+        )}
+      </div>
 
       {!factionName && (
         <div className="error-message" role="alert">
