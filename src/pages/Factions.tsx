@@ -4,11 +4,15 @@ import FactionCard from '../components/FactionCard'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Faction } from '../types/faction'
 
+type FactionViewOption = 'all' | 'favorites-only' | 'favorites-first'
+
 function Factions() {
   const [factions, setFactions] = useState<Faction[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [requestNumber, setRequestNumber] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [viewOption, setViewOption] = useState<FactionViewOption>('all')
   const { isFactionFavorite, toggleFactionFavorite } = useFavorites()
 
   useEffect(() => {
@@ -45,6 +49,31 @@ function Factions() {
     setRequestNumber((currentRequest) => currentRequest + 1)
   }
 
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+  const visibleFactions = factions
+    .filter((faction) => {
+      const matchesSearch = faction.name
+        .toLowerCase()
+        .includes(normalizedSearchTerm)
+      const matchesView =
+        viewOption !== 'favorites-only' || isFactionFavorite(faction)
+
+      return matchesSearch && matchesView
+    })
+    .sort((firstFaction, secondFaction) => {
+      if (viewOption === 'favorites-first') {
+        const favoriteDifference =
+          Number(isFactionFavorite(secondFaction)) -
+          Number(isFactionFavorite(firstFaction))
+
+        if (favoriteDifference !== 0) {
+          return favoriteDifference
+        }
+      }
+
+      return firstFaction.name.localeCompare(secondFaction.name)
+    })
+
   return (
     <section aria-labelledby="factions-heading">
       <h1 id="factions-heading">Factions</h1>
@@ -72,16 +101,56 @@ function Factions() {
       )}
 
       {!isLoading && !errorMessage && factions.length > 0 && (
-        <div className="faction-grid">
-          {factions.map((faction) => (
-            <FactionCard
-              key={faction.name}
-              faction={faction}
-              isFavorite={isFactionFavorite(faction)}
-              onToggleFavorite={toggleFactionFavorite}
-            />
-          ))}
-        </div>
+        <>
+          <div className="browse-controls">
+            <div className="form-field browse-controls__search">
+              <label htmlFor="faction-search">Search factions</label>
+              <input
+                id="faction-search"
+                type="search"
+                placeholder="Search by faction name"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="faction-view">View</label>
+              <select
+                id="faction-view"
+                value={viewOption}
+                onChange={(event) =>
+                  setViewOption(event.target.value as FactionViewOption)
+                }
+              >
+                <option value="all">All factions</option>
+                <option value="favorites-only">Favorites only</option>
+                <option value="favorites-first">Favorites first</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="results-count" role="status">
+            Showing {visibleFactions.length} of {factions.length} factions
+          </p>
+
+          {visibleFactions.length === 0 ? (
+            <p className="status-message">
+              No factions match the current search and view.
+            </p>
+          ) : (
+            <div className="faction-grid">
+              {visibleFactions.map((faction) => (
+                <FactionCard
+                  key={faction.name}
+                  faction={faction}
+                  isFavorite={isFactionFavorite(faction)}
+                  onToggleFavorite={toggleFactionFavorite}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   )

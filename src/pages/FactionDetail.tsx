@@ -8,6 +8,7 @@ import type { Faction } from '../types/faction'
 import type { Unit } from '../types/unit'
 
 type SortOption = 'name-asc' | 'name-desc' | 'points-asc' | 'points-desc'
+type UnitViewOption = 'all' | 'favorites-only' | 'favorites-first'
 
 function FactionDetail() {
   const { factionName: encodedFactionName } = useParams<{
@@ -20,6 +21,7 @@ function FactionDetail() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('name-asc')
+  const [viewOption, setViewOption] = useState<UnitViewOption>('all')
   const {
     isFavorite,
     toggleFavorite,
@@ -83,6 +85,7 @@ function FactionDetail() {
     setSearchTerm('')
     setSelectedType('')
     setSortOption('name-asc')
+    setViewOption('all')
   }
 
   const factionTypes = Array.from(
@@ -97,10 +100,21 @@ function FactionDetail() {
         .includes(normalizedSearchTerm)
       const matchesType =
         selectedType === '' || unit.factionType === selectedType
+      const matchesView =
+        viewOption !== 'favorites-only' || isFavorite(unit)
 
-      return matchesSearch && matchesType
+      return matchesSearch && matchesType && matchesView
     })
     .sort((firstUnit, secondUnit) => {
+      if (viewOption === 'favorites-first') {
+        const favoriteDifference =
+          Number(isFavorite(secondUnit)) - Number(isFavorite(firstUnit))
+
+        if (favoriteDifference !== 0) {
+          return favoriteDifference
+        }
+      }
+
       if (sortOption === 'name-asc') {
         return firstUnit.name.localeCompare(secondUnit.name)
       }
@@ -201,6 +215,21 @@ function FactionDetail() {
                     {factionType}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="unit-view">View</label>
+              <select
+                id="unit-view"
+                value={viewOption}
+                onChange={(event) =>
+                  setViewOption(event.target.value as UnitViewOption)
+                }
+              >
+                <option value="all">All units</option>
+                <option value="favorites-only">Favorites only</option>
+                <option value="favorites-first">Favorites first</option>
               </select>
             </div>
 

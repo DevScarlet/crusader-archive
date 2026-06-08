@@ -161,7 +161,10 @@ a:focus-visible {
 
 .unit-controls {
   display: grid;
-  grid-template-columns: minmax(12rem, 2fr) repeat(2, minmax(9rem, 1fr)) auto;
+  grid-template-columns:
+    minmax(12rem, 2fr)
+    repeat(3, minmax(8rem, 1fr))
+    auto;
   align-items: end;
   gap: 1rem;
   margin-bottom: 1rem;
@@ -213,6 +216,22 @@ a:focus-visible {
   transition:
     border-color 150ms ease,
     transform 150ms ease;
+}
+
+.browse-controls {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) minmax(10rem, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.favorites-search {
+  grid-template-columns: minmax(12rem, 1fr);
+  max-width: 36rem;
 }
 
 .faction-card__heading-link,
@@ -404,7 +423,8 @@ a:focus-visible {
 }
 
 @media (max-width: 48rem) {
-  .unit-controls {
+  .unit-controls,
+  .browse-controls {
     grid-template-columns: 1fr;
   }
 }

@@ -1,8 +1,10 @@
 import FactionCard from '../components/FactionCard'
 import UnitCard from '../components/UnitCard'
 import { useFavorites } from '../hooks/useFavorites'
+import { useState } from 'react'
 
 function Favorites() {
+  const [searchTerm, setSearchTerm] = useState('')
   const {
     favoriteUnits,
     favoriteFactions,
@@ -12,14 +14,22 @@ function Favorites() {
     toggleFactionFavorite,
   } = useFavorites()
 
-  const unitsByFaction = favoriteUnits.reduce<Record<string, typeof favoriteUnits>>(
-    (groups, unit) => {
-      const factionUnits = groups[unit.faction] ?? []
-      groups[unit.faction] = [...factionUnits, unit]
-      return groups
-    },
-    {},
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+  const visibleFavoriteFactions = favoriteFactions.filter((faction) =>
+    faction.name.toLowerCase().includes(normalizedSearchTerm),
   )
+  const visibleFavoriteUnits = favoriteUnits.filter(
+    (unit) =>
+      unit.name.toLowerCase().includes(normalizedSearchTerm) ||
+      unit.faction.toLowerCase().includes(normalizedSearchTerm),
+  )
+  const unitsByFaction = visibleFavoriteUnits.reduce<
+    Record<string, typeof favoriteUnits>
+  >((groups, unit) => {
+    const factionUnits = groups[unit.faction] ?? []
+    groups[unit.faction] = [...factionUnits, unit]
+    return groups
+  }, {})
 
   const factionNames = Object.keys(unitsByFaction).sort((first, second) =>
     first.localeCompare(second),
@@ -32,15 +42,30 @@ function Favorites() {
         Factions and units you save will be available here on this device.
       </p>
 
+      <div className="browse-controls favorites-search">
+        <div className="form-field browse-controls__search">
+          <label htmlFor="favorites-search">Search favorites</label>
+          <input
+            id="favorites-search"
+            type="search"
+            placeholder="Search factions or units"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </div>
+      </div>
+
       <section className="favorites-section">
         <h2>Favorite Factions</h2>
-        {favoriteFactions.length === 0 ? (
+        {visibleFavoriteFactions.length === 0 ? (
           <p className="status-message">
-            You have not saved any favorite factions yet.
+            {favoriteFactions.length === 0
+              ? 'You have not saved any favorite factions yet.'
+              : 'No favorite factions match your search.'}
           </p>
         ) : (
           <div className="faction-grid">
-            {favoriteFactions.map((faction) => (
+            {visibleFavoriteFactions.map((faction) => (
               <FactionCard
                 key={faction.name}
                 faction={faction}
@@ -54,9 +79,11 @@ function Favorites() {
 
       <section className="favorites-section">
         <h2>Favorite Units</h2>
-        {favoriteUnits.length === 0 ? (
+        {visibleFavoriteUnits.length === 0 ? (
           <p className="status-message">
-            You have not saved any favorite units yet.
+            {favoriteUnits.length === 0
+              ? 'You have not saved any favorite units yet.'
+              : 'No favorite units match your search.'}
           </p>
         ) : (
           factionNames.map((factionName) => (
