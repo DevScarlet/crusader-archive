@@ -67,3 +67,75 @@ a {
 h1 {
   margin-top: 0;
 }
+
+.page-introduction {
+  max-width: 42rem;
+  margin-bottom: 2rem;
+  color: #555555;
+}
+
+.status-message,
+.error-message {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.error-message {
+  border-left: 0.25rem solid #a22b2b;
+}
+
+.error-message p {
+  margin-top: 0;
+}
+
+button {
+  padding: 0.625rem 1rem;
+  border: 0;
+  border-radius: 0.375rem;
+  color: #ffffff;
+  background: #242424;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #444444;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 0.1875rem solid #846c24;
+  outline-offset: 0.1875rem;
+}
+
+.faction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.faction-card {
+  padding: 1.25rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.faction-card h2 {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.faction-card__type {
+  margin: 0;
+  color: #666666;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.faction-card a {
+  font-weight: 700;
+}
