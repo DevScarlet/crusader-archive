@@ -1,10 +1,8 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type {
   FocusEvent,
   KeyboardEvent,
-  MouseEvent,
 } from 'react'
-import { createPortal } from 'react-dom'
 import type { GlossaryEntry } from '../data/glossary'
 
 interface HelpTooltipProps {
@@ -12,34 +10,36 @@ interface HelpTooltipProps {
   triggerText?: string
 }
 
-interface TooltipPosition {
-  left: number
-  top: number
-  placement: 'above' | 'below'
-}
-
 function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [position, setPosition] = useState<TooltipPosition | null>(null)
+  const wrapperRef = useRef<HTMLSpanElement>(null)
   const isPointerInteraction = useRef(false)
   const tooltipId = useId()
 
-  function openTooltip(button: HTMLButtonElement) {
-    const buttonBounds = button.getBoundingClientRect()
-    const tooltipWidth = Math.min(260, window.innerWidth - 32)
-    const left = Math.min(
-      Math.max(buttonBounds.left + buttonBounds.width / 2 - tooltipWidth / 2, 16),
-      window.innerWidth - tooltipWidth - 16,
-    )
-    const hasRoomBelow = buttonBounds.bottom + 150 < window.innerHeight
+  useEffect(() => {
+    function handleOutsideClick(event: globalThis.MouseEvent) {
+      if (
+        event.target instanceof Node &&
+        !wrapperRef.current?.contains(event.target)
+      ) {
+        setIsOpen(false)
+      }
+    }
 
-    setPosition({
-      left,
-      top: hasRoomBelow ? buttonBounds.bottom + 8 : buttonBounds.top - 8,
-      placement: hasRoomBelow ? 'below' : 'above',
-    })
-    setIsOpen(true)
-  }
+    function handleEscape(event: globalThis.KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('click', handleOutsideClick)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('click', handleOutsideClick)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
 
   function handleBlur(event: FocusEvent<HTMLSpanElement>) {
     if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -48,24 +48,15 @@ function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
     }
   }
 
-  function handleClick(event: MouseEvent<HTMLButtonElement>) {
-    if (isOpen) {
-      setIsOpen(false)
-    } else {
-      openTooltip(event.currentTarget)
-    }
-
+  function handleClick() {
+    setIsOpen((currentIsOpen) => !currentIsOpen)
     isPointerInteraction.current = false
   }
 
-  function handleFocus(event: FocusEvent<HTMLButtonElement>) {
+  function handleFocus() {
     if (!isPointerInteraction.current) {
-      openTooltip(event.currentTarget)
+      setIsOpen(true)
     }
-  }
-
-  function handlePointerDown() {
-    isPointerInteraction.current = true
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
@@ -79,7 +70,7 @@ function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
     : 'help-tooltip__button help-tooltip__button--icon'
 
   return (
-    <span className="help-tooltip" onBlur={handleBlur}>
+    <span className="help-tooltip" onBlur={handleBlur} ref={wrapperRef}>
       <button
         type="button"
         className={buttonClassName}
@@ -89,25 +80,19 @@ function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
         onClick={handleClick}
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
-        onPointerDown={handlePointerDown}
+        onPointerDown={() => {
+          isPointerInteraction.current = true
+        }}
       >
         {triggerText ?? '?'}
       </button>
 
-      {isOpen &&
-        position &&
-        createPortal(
-          <span
-            className={`help-tooltip__content help-tooltip__content--${position.placement}`}
-            id={tooltipId}
-            role="tooltip"
-            style={{ left: position.left, top: position.top }}
-          >
-            <strong>{entry.title}</strong>
-            <span>{entry.description}</span>
-          </span>,
-          document.body,
-        )}
+      {isOpen && (
+        <span className="help-tooltip__content" id={tooltipId} role="tooltip">
+          <strong>{entry.title}</strong>
+          <span>{entry.description}</span>
+        </span>
+      )}
     </span>
   )
 }

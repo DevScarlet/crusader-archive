@@ -298,7 +298,7 @@ a:focus-visible {
   display: grid;
   grid-template-columns: repeat(6, minmax(3rem, 1fr));
   margin: 1rem 0 0;
-  overflow-x: auto;
+  overflow: visible;
   border: 1px solid #ddddda;
   border-radius: 0.375rem;
 }
@@ -438,8 +438,10 @@ a:focus-visible {
 }
 
 .help-tooltip__content {
-  position: fixed;
+  position: absolute;
   z-index: 1000;
+  right: -0.5rem;
+  bottom: calc(100% + 0.5rem);
   width: min(16.25rem, calc(100vw - 2rem));
   max-height: none;
   padding: 0.75rem;
@@ -455,10 +457,6 @@ a:focus-visible {
   text-transform: none;
 }
 
-.help-tooltip__content--above {
-  transform: translateY(-100%);
-}
-
 .help-tooltip__content strong,
 .help-tooltip__content span {
   display: block;
@@ -466,6 +464,18 @@ a:focus-visible {
 
 .help-tooltip__content strong {
   margin-bottom: 0.25rem;
+}
+
+.unit-stats div:nth-child(-n + 3) .help-tooltip__content {
+  right: auto;
+  left: -0.5rem;
+}
+
+.unit-detail__type .help-tooltip__content,
+.label-with-help .help-tooltip__content,
+.heading-with-help .help-tooltip__content {
+  right: auto;
+  left: -0.5rem;
 }
 
 .detail-section {
