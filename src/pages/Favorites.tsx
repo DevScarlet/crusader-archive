@@ -3,8 +3,26 @@ import UnitCard from '../components/UnitCard'
 import { useFavorites } from '../hooks/useFavorites'
 import { useState } from 'react'
 
+type FactionSortOption =
+  | 'name-asc'
+  | 'name-desc'
+  | 'unit-count-asc'
+  | 'unit-count-desc'
+
+type UnitSortOption =
+  | 'name-asc'
+  | 'name-desc'
+  | 'points-asc'
+  | 'points-desc'
+
 function Favorites() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [factionSearchTerm, setFactionSearchTerm] = useState('')
+  const [factionSortOption, setFactionSortOption] =
+    useState<FactionSortOption>('name-asc')
+  const [unitSearchTerm, setUnitSearchTerm] = useState('')
+  const [selectedUnitType, setSelectedUnitType] = useState('')
+  const [unitSortOption, setUnitSortOption] =
+    useState<UnitSortOption>('name-asc')
   const {
     favoriteUnits,
     favoriteFactions,
@@ -14,15 +32,62 @@ function Favorites() {
     toggleFactionFavorite,
   } = useFavorites()
 
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
-  const visibleFavoriteFactions = favoriteFactions.filter((faction) =>
-    faction.name.toLowerCase().includes(normalizedSearchTerm),
-  )
-  const visibleFavoriteUnits = favoriteUnits.filter(
-    (unit) =>
-      unit.name.toLowerCase().includes(normalizedSearchTerm) ||
-      unit.faction.toLowerCase().includes(normalizedSearchTerm),
-  )
+  const normalizedFactionSearch = factionSearchTerm.trim().toLowerCase()
+  const visibleFavoriteFactions = favoriteFactions
+    .filter((faction) =>
+      faction.name.toLowerCase().includes(normalizedFactionSearch),
+    )
+    .sort((firstFaction, secondFaction) => {
+      if (factionSortOption === 'name-asc') {
+        return firstFaction.name.localeCompare(secondFaction.name)
+      }
+
+      if (factionSortOption === 'name-desc') {
+        return secondFaction.name.localeCompare(firstFaction.name)
+      }
+
+      return factionSortOption === 'unit-count-asc'
+        ? firstFaction.unitCount - secondFaction.unitCount
+        : secondFaction.unitCount - firstFaction.unitCount
+    })
+
+  const favoriteUnitTypes = Array.from(
+    new Set(favoriteUnits.map((unit) => unit.factionType)),
+  ).sort((firstType, secondType) => firstType.localeCompare(secondType))
+
+  const normalizedUnitSearch = unitSearchTerm.trim().toLowerCase()
+  const visibleFavoriteUnits = favoriteUnits
+    .filter((unit) => {
+      const matchesSearch = unit.name
+        .toLowerCase()
+        .includes(normalizedUnitSearch)
+      const matchesType =
+        selectedUnitType === '' || unit.factionType === selectedUnitType
+
+      return matchesSearch && matchesType
+    })
+    .sort((firstUnit, secondUnit) => {
+      if (unitSortOption === 'name-asc') {
+        return firstUnit.name.localeCompare(secondUnit.name)
+      }
+
+      if (unitSortOption === 'name-desc') {
+        return secondUnit.name.localeCompare(firstUnit.name)
+      }
+
+      if (firstUnit.basePoints === undefined) {
+        return secondUnit.basePoints === undefined ? 0 : 1
+      }
+
+      if (secondUnit.basePoints === undefined) {
+        return -1
+      }
+
+      return unitSortOption === 'points-asc'
+        ? firstUnit.basePoints - secondUnit.basePoints
+        : secondUnit.basePoints - firstUnit.basePoints
+    })
+
   const unitsByFaction = visibleFavoriteUnits.reduce<
     Record<string, typeof favoriteUnits>
   >((groups, unit) => {
@@ -42,21 +107,45 @@ function Favorites() {
         Factions and units you save will be available here on this device.
       </p>
 
-      <div className="browse-controls favorites-search">
-        <div className="form-field browse-controls__search">
-          <label htmlFor="favorites-search">Search favorites</label>
-          <input
-            id="favorites-search"
-            type="search"
-            placeholder="Search factions or units"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-          />
-        </div>
-      </div>
-
       <section className="favorites-section">
         <h2>Favorite Factions</h2>
+
+        <div className="browse-controls">
+          <div className="form-field browse-controls__search">
+            <label htmlFor="favorite-faction-search">
+              Search favorite factions
+            </label>
+            <input
+              id="favorite-faction-search"
+              type="search"
+              placeholder="Search by faction name"
+              value={factionSearchTerm}
+              onChange={(event) => setFactionSearchTerm(event.target.value)}
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="favorite-faction-sort">Sort by</label>
+            <select
+              id="favorite-faction-sort"
+              value={factionSortOption}
+              onChange={(event) =>
+                setFactionSortOption(event.target.value as FactionSortOption)
+              }
+            >
+              <option value="name-asc">Name A-Z</option>
+              <option value="name-desc">Name Z-A</option>
+              <option value="unit-count-asc">Unit count low-high</option>
+              <option value="unit-count-desc">Unit count high-low</option>
+            </select>
+          </div>
+        </div>
+
+        <p className="results-count" role="status">
+          Showing {visibleFavoriteFactions.length} of {favoriteFactions.length}{' '}
+          favorite factions
+        </p>
+
         {visibleFavoriteFactions.length === 0 ? (
           <p className="status-message">
             {favoriteFactions.length === 0
@@ -79,6 +168,57 @@ function Favorites() {
 
       <section className="favorites-section">
         <h2>Favorite Units</h2>
+
+        <div className="favorite-unit-controls">
+          <div className="form-field favorite-unit-controls__search">
+            <label htmlFor="favorite-unit-search">Search favorite units</label>
+            <input
+              id="favorite-unit-search"
+              type="search"
+              placeholder="Search by unit name"
+              value={unitSearchTerm}
+              onChange={(event) => setUnitSearchTerm(event.target.value)}
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="favorite-unit-type">Faction type</label>
+            <select
+              id="favorite-unit-type"
+              value={selectedUnitType}
+              onChange={(event) => setSelectedUnitType(event.target.value)}
+            >
+              <option value="">All types</option>
+              {favoriteUnitTypes.map((factionType) => (
+                <option key={factionType} value={factionType}>
+                  {factionType}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="favorite-unit-sort">Sort by</label>
+            <select
+              id="favorite-unit-sort"
+              value={unitSortOption}
+              onChange={(event) =>
+                setUnitSortOption(event.target.value as UnitSortOption)
+              }
+            >
+              <option value="name-asc">Name A-Z</option>
+              <option value="name-desc">Name Z-A</option>
+              <option value="points-asc">Points low-high</option>
+              <option value="points-desc">Points high-low</option>
+            </select>
+          </div>
+        </div>
+
+        <p className="results-count" role="status">
+          Showing {visibleFavoriteUnits.length} of {favoriteUnits.length}{' '}
+          favorite units
+        </p>
+
         {visibleFavoriteUnits.length === 0 ? (
           <p className="status-message">
             {favoriteUnits.length === 0
