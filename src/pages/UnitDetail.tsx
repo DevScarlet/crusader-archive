@@ -229,8 +229,10 @@ function UnitDetail() {
               {availableStats.map(([statName, label, glossaryEntry]) => (
                 <div key={statName}>
                   <dt>
-                    <span>{label}</span>
-                    <HelpTooltip entry={glossaryEntry} />
+                    <HelpTooltip
+                      entry={glossaryEntry}
+                      triggerText={label}
+                    />
                   </dt>
                   <dd>{unit.stats?.[statName]}</dd>
                 </div>
