@@ -3,8 +3,14 @@ import { getFactions } from '../api/openHammerApi'
 import FactionCard from '../components/FactionCard'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Faction } from '../types/faction'
+import { compareOptionalNumbers } from '../utils/sort'
 
 type FactionViewOption = 'all' | 'favorites-only' | 'favorites-first'
+type FactionSortOption =
+  | 'name-asc'
+  | 'name-desc'
+  | 'unit-count-asc'
+  | 'unit-count-desc'
 
 function Factions() {
   const [factions, setFactions] = useState<Faction[]>([])
@@ -13,6 +19,8 @@ function Factions() {
   const [requestNumber, setRequestNumber] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewOption, setViewOption] = useState<FactionViewOption>('all')
+  const [sortOption, setSortOption] =
+    useState<FactionSortOption>('name-asc')
   const { isFactionFavorite, toggleFactionFavorite } = useFavorites()
 
   useEffect(() => {
@@ -49,6 +57,12 @@ function Factions() {
     setRequestNumber((currentRequest) => currentRequest + 1)
   }
 
+  function clearFilters() {
+    setSearchTerm('')
+    setViewOption('all')
+    setSortOption('name-asc')
+  }
+
   const normalizedSearchTerm = searchTerm.trim().toLowerCase()
   const visibleFactions = factions
     .filter((faction) => {
@@ -71,7 +85,19 @@ function Factions() {
         }
       }
 
-      return firstFaction.name.localeCompare(secondFaction.name)
+      if (sortOption === 'name-asc') {
+        return firstFaction.name.localeCompare(secondFaction.name)
+      }
+
+      if (sortOption === 'name-desc') {
+        return secondFaction.name.localeCompare(firstFaction.name)
+      }
+
+      return compareOptionalNumbers(
+        firstFaction.unitCount,
+        secondFaction.unitCount,
+        sortOption === 'unit-count-asc' ? 'asc' : 'desc',
+      )
     })
 
   return (
@@ -102,7 +128,7 @@ function Factions() {
 
       {!isLoading && !errorMessage && factions.length > 0 && (
         <>
-          <div className="browse-controls">
+          <div className="browse-controls factions-controls">
             <div className="form-field browse-controls__search">
               <label htmlFor="faction-search">Search factions</label>
               <input
@@ -128,6 +154,26 @@ function Factions() {
                 <option value="favorites-first">Favorites first</option>
               </select>
             </div>
+
+            <div className="form-field">
+              <label htmlFor="faction-sort">Sort by</label>
+              <select
+                id="faction-sort"
+                value={sortOption}
+                onChange={(event) =>
+                  setSortOption(event.target.value as FactionSortOption)
+                }
+              >
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="unit-count-asc">Unit count low-high</option>
+                <option value="unit-count-desc">Unit count high-low</option>
+              </select>
+            </div>
+
+            <button type="button" onClick={clearFilters}>
+              Clear filters
+            </button>
           </div>
 
           <p className="results-count" role="status">
@@ -136,7 +182,7 @@ function Factions() {
 
           {visibleFactions.length === 0 ? (
             <p className="status-message">
-              No factions match the current search and view.
+              No factions match the current search and filters.
             </p>
           ) : (
             <div className="faction-grid">

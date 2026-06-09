@@ -1,6 +1,7 @@
 import FactionCard from '../components/FactionCard'
 import UnitCard from '../components/UnitCard'
 import { useFavorites } from '../hooks/useFavorites'
+import { compareOptionalNumbers } from '../utils/sort'
 import { useState } from 'react'
 
 type FactionSortOption =
@@ -32,6 +33,17 @@ function Favorites() {
     toggleFactionFavorite,
   } = useFavorites()
 
+  function clearFactionFilters() {
+    setFactionSearchTerm('')
+    setFactionSortOption('name-asc')
+  }
+
+  function clearUnitFilters() {
+    setUnitSearchTerm('')
+    setSelectedUnitType('')
+    setUnitSortOption('name-asc')
+  }
+
   const normalizedFactionSearch = factionSearchTerm.trim().toLowerCase()
   const visibleFavoriteFactions = favoriteFactions
     .filter((faction) =>
@@ -46,9 +58,11 @@ function Favorites() {
         return secondFaction.name.localeCompare(firstFaction.name)
       }
 
-      return factionSortOption === 'unit-count-asc'
-        ? firstFaction.unitCount - secondFaction.unitCount
-        : secondFaction.unitCount - firstFaction.unitCount
+      return compareOptionalNumbers(
+        firstFaction.unitCount,
+        secondFaction.unitCount,
+        factionSortOption === 'unit-count-asc' ? 'asc' : 'desc',
+      )
     })
 
   const favoriteUnitTypes = Array.from(
@@ -75,17 +89,11 @@ function Favorites() {
         return secondUnit.name.localeCompare(firstUnit.name)
       }
 
-      if (firstUnit.basePoints === undefined) {
-        return secondUnit.basePoints === undefined ? 0 : 1
-      }
-
-      if (secondUnit.basePoints === undefined) {
-        return -1
-      }
-
-      return unitSortOption === 'points-asc'
-        ? firstUnit.basePoints - secondUnit.basePoints
-        : secondUnit.basePoints - firstUnit.basePoints
+      return compareOptionalNumbers(
+        firstUnit.basePoints,
+        secondUnit.basePoints,
+        unitSortOption === 'points-asc' ? 'asc' : 'desc',
+      )
     })
 
   const unitsByFaction = visibleFavoriteUnits.reduce<
@@ -139,6 +147,10 @@ function Favorites() {
               <option value="unit-count-desc">Unit count high-low</option>
             </select>
           </div>
+
+          <button type="button" onClick={clearFactionFilters}>
+            Clear filters
+          </button>
         </div>
 
         <p className="results-count" role="status">
@@ -150,7 +162,7 @@ function Favorites() {
           <p className="status-message">
             {favoriteFactions.length === 0
               ? 'You have not saved any favorite factions yet.'
-              : 'No favorite factions match your search.'}
+              : 'No favorite factions match the current filters.'}
           </p>
         ) : (
           <div className="faction-grid">
@@ -212,6 +224,10 @@ function Favorites() {
               <option value="points-desc">Points high-low</option>
             </select>
           </div>
+
+          <button type="button" onClick={clearUnitFilters}>
+            Clear filters
+          </button>
         </div>
 
         <p className="results-count" role="status">
@@ -223,7 +239,7 @@ function Favorites() {
           <p className="status-message">
             {favoriteUnits.length === 0
               ? 'You have not saved any favorite units yet.'
-              : 'No favorite units match your search.'}
+              : 'No favorite units match the current filters.'}
           </p>
         ) : (
           factionNames.map((factionName) => (

@@ -220,7 +220,8 @@ a:focus-visible {
 
 .browse-controls {
   display: grid;
-  grid-template-columns: minmax(12rem, 2fr) minmax(10rem, 1fr);
+  grid-template-columns: minmax(12rem, 2fr) minmax(10rem, 1fr) auto;
+  align-items: end;
   gap: 1rem;
   margin-bottom: 1rem;
   padding: 1rem;
@@ -229,9 +230,20 @@ a:focus-visible {
   background: #ffffff;
 }
 
+.factions-controls {
+  grid-template-columns:
+    minmax(12rem, 2fr)
+    repeat(2, minmax(9rem, 1fr))
+    auto;
+}
+
 .favorite-unit-controls {
   display: grid;
-  grid-template-columns: minmax(12rem, 2fr) repeat(2, minmax(9rem, 1fr));
+  grid-template-columns:
+    minmax(12rem, 2fr)
+    repeat(2, minmax(9rem, 1fr))
+    auto;
+  align-items: end;
   gap: 1rem;
   margin-bottom: 1rem;
   padding: 1rem;
