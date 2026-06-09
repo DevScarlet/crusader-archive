@@ -502,13 +502,14 @@ a:focus-visible {
 }
 
 .weapon-card dl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(2.75rem, 1fr));
+  gap: 0.75rem;
+  overflow: visible;
 }
 
 .weapon-card dl div {
-  min-width: 3rem;
+  min-width: 0;
 }
 
 .weapon-card dt {
@@ -516,6 +517,20 @@ a:focus-visible {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.weapon-card .help-tooltip__button--text {
+  color: inherit;
+}
+
+.weapon-card .help-tooltip__button--text:hover,
+.weapon-card .help-tooltip__button--text:focus-visible {
+  color: #333333;
+}
+
+.weapon-card dl div:nth-child(-n + 3) .help-tooltip__content {
+  right: auto;
+  left: -0.5rem;
 }
 
 .weapon-card dd {

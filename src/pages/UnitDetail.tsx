@@ -38,37 +38,67 @@ function WeaponList({ title, weapons }: WeaponListProps) {
             <dl>
               {weapon.range && (
                 <div>
-                  <dt>Range</dt>
+                  <dt>
+                    <HelpTooltip
+                      entry={glossary.range}
+                      triggerText="Range"
+                    />
+                  </dt>
                   <dd>{weapon.range}</dd>
                 </div>
               )}
               {weapon.attacks && (
                 <div>
-                  <dt>A</dt>
+                  <dt>
+                    <HelpTooltip
+                      entry={glossary.attacks}
+                      triggerText="A"
+                    />
+                  </dt>
                   <dd>{weapon.attacks}</dd>
                 </div>
               )}
               {weapon.skill && (
                 <div>
-                  <dt>Skill</dt>
+                  <dt>
+                    <HelpTooltip
+                      entry={glossary.skill}
+                      triggerText="Skill"
+                    />
+                  </dt>
                   <dd>{weapon.skill}</dd>
                 </div>
               )}
               {weapon.strength && (
                 <div>
-                  <dt>S</dt>
+                  <dt>
+                    <HelpTooltip
+                      entry={glossary.strength}
+                      triggerText="S"
+                    />
+                  </dt>
                   <dd>{weapon.strength}</dd>
                 </div>
               )}
               {weapon.armorPenetration && (
                 <div>
-                  <dt>AP</dt>
+                  <dt>
+                    <HelpTooltip
+                      entry={glossary.armorPenetration}
+                      triggerText="AP"
+                    />
+                  </dt>
                   <dd>{weapon.armorPenetration}</dd>
                 </div>
               )}
               {weapon.damage && (
                 <div>
-                  <dt>D</dt>
+                  <dt>
+                    <HelpTooltip
+                      entry={glossary.damage}
+                      triggerText="D"
+                    />
+                  </dt>
                   <dd>{weapon.damage}</dd>
                 </div>
               )}

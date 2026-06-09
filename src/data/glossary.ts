@@ -54,4 +54,30 @@ export const glossary = {
     description:
       'Special rules that describe what a unit can do beyond its basic stats and weapons.',
   },
+  range: {
+    title: 'Range',
+    description: 'How far away the weapon can target enemies.',
+  },
+  attacks: {
+    title: 'Attacks',
+    description: 'How many attacks the weapon makes when it is used.',
+  },
+  skill: {
+    title: 'Skill',
+    description: 'The dice roll normally needed to hit with this weapon.',
+  },
+  strength: {
+    title: 'Strength',
+    description:
+      'How powerful the weapon is when trying to wound its target.',
+  },
+  armorPenetration: {
+    title: 'Armour Penetration',
+    description:
+      "How much the weapon worsens the target's saving throw.",
+  },
+  damage: {
+    title: 'Damage',
+    description: 'How much damage each successful unsaved attack deals.',
+  },
 } satisfies Record<string, GlossaryEntry>
