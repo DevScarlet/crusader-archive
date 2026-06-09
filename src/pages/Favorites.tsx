@@ -1,5 +1,7 @@
 import FactionCard from '../components/FactionCard'
+import HelpTooltip from '../components/HelpTooltip'
 import UnitCard from '../components/UnitCard'
+import { glossary } from '../data/glossary'
 import { useFavorites } from '../hooks/useFavorites'
 import { compareOptionalNumbers } from '../utils/sort'
 import { useState } from 'react'
@@ -194,7 +196,10 @@ function Favorites() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="favorite-unit-type">Faction type</label>
+            <div className="label-with-help">
+              <label htmlFor="favorite-unit-type">Faction type</label>
+              <HelpTooltip entry={glossary.factionType} />
+            </div>
             <select
               id="favorite-unit-type"
               value={selectedUnitType}

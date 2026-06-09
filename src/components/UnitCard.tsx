@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
+import { glossary } from '../data/glossary'
 import type { Unit, UnitStats } from '../types/unit'
 import FavoriteButton from './FavoriteButton'
+import HelpTooltip from './HelpTooltip'
 
 interface UnitCardProps {
   unit: Unit
@@ -8,13 +10,15 @@ interface UnitCardProps {
   onToggleFavorite?: (unit: Unit) => void
 }
 
-const statLabels: Array<[keyof UnitStats, string]> = [
-  ['movement', 'M'],
-  ['toughness', 'T'],
-  ['save', 'SV'],
-  ['wounds', 'W'],
-  ['leadership', 'LD'],
-  ['objectiveControl', 'OC'],
+const statLabels: Array<
+  [keyof UnitStats, string, (typeof glossary)[keyof typeof glossary]]
+> = [
+  ['movement', 'M', glossary.movement],
+  ['toughness', 'T', glossary.toughness],
+  ['save', 'SV', glossary.save],
+  ['wounds', 'W', glossary.wounds],
+  ['leadership', 'LD', glossary.leadership],
+  ['objectiveControl', 'OC', glossary.objectiveControl],
 ]
 
 function UnitCard({
@@ -52,15 +56,19 @@ function UnitCard({
 
         {unit.basePoints !== undefined && (
           <p>
-            <strong>{unit.basePoints}</strong> base points
+            <strong>{unit.basePoints}</strong> base points{' '}
+            <HelpTooltip entry={glossary.points} />
           </p>
         )}
 
         {availableStats.length > 0 && (
           <dl className="unit-stats" aria-label={`${unit.name} stats`}>
-            {availableStats.map(([statName, label]) => (
+            {availableStats.map(([statName, label, glossaryEntry]) => (
               <div key={statName}>
-                <dt>{label}</dt>
+                <dt>
+                  <span>{label}</span>
+                  <HelpTooltip entry={glossaryEntry} />
+                </dt>
                 <dd>{unit.stats?.[statName]}</dd>
               </div>
             ))}

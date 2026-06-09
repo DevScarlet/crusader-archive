@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getUnit } from '../api/openHammerApi'
 import FavoriteButton from '../components/FavoriteButton'
+import HelpTooltip from '../components/HelpTooltip'
+import { glossary } from '../data/glossary'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Unit, UnitStats, UnitWeapon } from '../types/unit'
 
-const statLabels: Array<[keyof UnitStats, string]> = [
-  ['movement', 'M'],
-  ['toughness', 'T'],
-  ['save', 'SV'],
-  ['wounds', 'W'],
-  ['leadership', 'LD'],
-  ['objectiveControl', 'OC'],
+const statLabels: Array<
+  [keyof UnitStats, string, (typeof glossary)[keyof typeof glossary]]
+> = [
+  ['movement', 'M', glossary.movement],
+  ['toughness', 'T', glossary.toughness],
+  ['save', 'SV', glossary.save],
+  ['wounds', 'W', glossary.wounds],
+  ['leadership', 'LD', glossary.leadership],
+  ['objectiveControl', 'OC', glossary.objectiveControl],
 ]
 
 interface WeaponListProps {
@@ -199,7 +203,10 @@ function UnitDetail() {
         <>
           <div className="page-heading-row">
             <div>
-              <p className="unit-detail__type">{unit.factionType}</p>
+              <p className="unit-detail__type">
+                {unit.factionType}{' '}
+                <HelpTooltip entry={glossary.factionType} />
+              </p>
               <h1 id="unit-heading">{unit.name}</h1>
             </div>
             <FavoriteButton
@@ -212,15 +219,19 @@ function UnitDetail() {
 
           {unit.basePoints !== undefined && (
             <p className="unit-detail__points">
-              <strong>{unit.basePoints}</strong> base points
+              <strong>{unit.basePoints}</strong> base points{' '}
+              <HelpTooltip entry={glossary.points} />
             </p>
           )}
 
           {availableStats.length > 0 && (
             <dl className="unit-stats unit-detail__stats">
-              {availableStats.map(([statName, label]) => (
+              {availableStats.map(([statName, label, glossaryEntry]) => (
                 <div key={statName}>
-                  <dt>{label}</dt>
+                  <dt>
+                    <span>{label}</span>
+                    <HelpTooltip entry={glossaryEntry} />
+                  </dt>
                   <dd>{unit.stats?.[statName]}</dd>
                 </div>
               ))}
@@ -238,7 +249,9 @@ function UnitDetail() {
 
           {unit.abilities && unit.abilities.length > 0 && (
             <section className="detail-section">
-              <h2>Abilities</h2>
+              <h2 className="heading-with-help">
+                Abilities <HelpTooltip entry={glossary.abilities} />
+              </h2>
               <div className="ability-list">
                 {unit.abilities.map((ability, index) => (
                   <article key={`${ability.name}-${index}`}>
@@ -252,7 +265,9 @@ function UnitDetail() {
 
           {unit.keywords && unit.keywords.length > 0 && (
             <section className="detail-section">
-              <h2>Keywords</h2>
+              <h2 className="heading-with-help">
+                Keywords <HelpTooltip entry={glossary.keywords} />
+              </h2>
               <ul className="keyword-list">
                 {unit.keywords.map((keyword) => (
                   <li key={keyword}>{keyword}</li>

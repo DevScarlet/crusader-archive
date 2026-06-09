@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { getUnitsByFaction } from '../api/openHammerApi'
 import FavoriteButton from '../components/FavoriteButton'
 import UnitCard from '../components/UnitCard'
+import HelpTooltip from '../components/HelpTooltip'
+import { glossary } from '../data/glossary'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Faction } from '../types/faction'
 import type { Unit } from '../types/unit'
@@ -203,7 +205,10 @@ function FactionDetail() {
             </div>
 
             <div className="form-field">
-              <label htmlFor="faction-type-filter">Faction type</label>
+              <div className="label-with-help">
+                <label htmlFor="faction-type-filter">Faction type</label>
+                <HelpTooltip entry={glossary.factionType} />
+              </div>
               <select
                 id="faction-type-filter"
                 value={selectedType}
