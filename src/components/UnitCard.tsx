@@ -40,13 +40,14 @@ function UnitCard({
   return (
     <article className="unit-card">
       <div className="card-heading-row">
-        <Link
-          className="unit-card__heading-link"
-          to={`/units/${encodeURIComponent(unitIdentifier)}`}
-        >
+        <div className="unit-card__heading-link">
           <p className="unit-card__type">{unit.factionType}</p>
-          <h2>{unit.name}</h2>
-        </Link>
+          <h2>
+            <Link to={`/units/${encodeURIComponent(unitIdentifier)}`}>
+              {unit.name}
+            </Link>
+          </h2>
+        </div>
 
         {onToggleFavorite && (
           <FavoriteButton
@@ -82,13 +83,6 @@ function UnitCard({
             ))}
           </dl>
         )}
-
-        <Link
-          className="card-link-text"
-          to={`/units/${encodeURIComponent(unitIdentifier)}`}
-        >
-          View unit
-        </Link>
 
         {onToggleCompare && (
           <button
