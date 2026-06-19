@@ -252,6 +252,13 @@ a:focus-visible {
   background: #ffffff;
 }
 
+.global-unit-controls {
+  grid-template-columns:
+    minmax(12rem, 2fr)
+    repeat(5, minmax(8rem, 1fr))
+    auto;
+}
+
 .faction-card__heading-link,
 .unit-card__heading-link {
   min-width: 0;
@@ -693,6 +700,7 @@ a:focus-visible {
 @media (max-width: 48rem) {
   .unit-controls,
   .browse-controls,
+  .global-unit-controls,
   .favorite-unit-controls {
     grid-template-columns: 1fr;
   }

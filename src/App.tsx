@@ -6,6 +6,7 @@ import Factions from './pages/Factions'
 import Favorites from './pages/Favorites'
 import Home from './pages/Home'
 import UnitDetail from './pages/UnitDetail'
+import Units from './pages/Units'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/factions" element={<Factions />} />
           <Route path="/factions/:factionName" element={<FactionDetail />} />
+          <Route path="/units" element={<Units />} />
           <Route path="/units/:unitIdentifier" element={<UnitDetail />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/compare" element={<Compare />} />

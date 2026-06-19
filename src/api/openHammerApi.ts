@@ -7,6 +7,7 @@ import type {
 } from '../types/unit'
 
 const API_BASE_URL = 'https://openhammer-api-production.up.railway.app'
+const ALL_UNITS_PAGE_SIZE = 500
 
 interface OpenHammerFaction {
   name: string
@@ -17,6 +18,7 @@ interface OpenHammerFaction {
 interface OpenHammerUnit {
   id?: string
   name: string
+  type?: string
   faction: string
   faction_type: string
   points?: {
@@ -172,6 +174,7 @@ function mapUnit(unit: OpenHammerUnit): Unit {
     name: unit.name,
     faction: unit.faction,
     factionType: unit.faction_type,
+    unitType: getOptionalString(unit.type),
     basePoints,
     stats: mapUnitStats(unit.stats),
     rangedWeapons: mapWeapons(unit.weapons?.ranged),
@@ -218,6 +221,36 @@ export async function getUnitsByFaction(
   }
 
   return responseBody.map(mapUnit)
+}
+
+export async function getUnits(signal?: AbortSignal): Promise<Unit[]> {
+  const units: Unit[] = []
+  let offset = 0
+
+  while (true) {
+    const response = await fetch(
+      `${API_BASE_URL}/units?limit=${ALL_UNITS_PAGE_SIZE}&offset=${offset}`,
+      { signal },
+    )
+
+    if (!response.ok) {
+      throw new Error(`OpenHammer API returned status ${response.status}.`)
+    }
+
+    const responseBody: unknown = await response.json()
+
+    if (!Array.isArray(responseBody) || !responseBody.every(isOpenHammerUnit)) {
+      throw new Error('OpenHammer API returned an unexpected units response.')
+    }
+
+    units.push(...responseBody.map(mapUnit))
+
+    if (responseBody.length < ALL_UNITS_PAGE_SIZE) {
+      return units
+    }
+
+    offset += ALL_UNITS_PAGE_SIZE
+  }
 }
 
 export async function getUnit(

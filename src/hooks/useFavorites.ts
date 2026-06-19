@@ -51,6 +51,7 @@ function parseFavoriteUnit(value: unknown): Unit | null {
     name: favorite.name,
     faction: favorite.faction,
     factionType: favorite.factionType,
+    unitType: getOptionalString(favorite.unitType),
     basePoints:
       typeof favorite.basePoints === 'number'
         ? favorite.basePoints
@@ -172,6 +173,7 @@ export function useFavorites() {
         name: unit.name,
         faction: unit.faction,
         factionType: unit.factionType,
+        unitType: unit.unitType,
         basePoints: unit.basePoints,
         stats: unit.stats,
       },

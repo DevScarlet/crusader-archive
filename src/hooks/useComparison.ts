@@ -50,6 +50,7 @@ function parseComparisonUnit(value: unknown): Unit | null {
     name: unit.name,
     faction: unit.faction,
     factionType: unit.factionType,
+    unitType: getOptionalString(unit.unitType),
     basePoints:
       typeof unit.basePoints === 'number' ? unit.basePoints : undefined,
     stats: parseStats(unit.stats),
@@ -88,6 +89,7 @@ function saveComparisonUnits(units: Unit[]): void {
         name: unit.name,
         faction: unit.faction,
         factionType: unit.factionType,
+        unitType: unit.unitType,
         basePoints: unit.basePoints,
         stats: unit.stats,
       })),

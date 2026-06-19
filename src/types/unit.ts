@@ -28,6 +28,7 @@ export interface Unit {
   name: string
   faction: string
   factionType: string
+  unitType?: string
   basePoints?: number
   stats?: UnitStats
   rangedWeapons?: UnitWeapon[]
