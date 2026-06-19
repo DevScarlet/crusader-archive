@@ -7,7 +7,6 @@ import type {
 } from '../types/unit'
 
 const API_BASE_URL = 'https://openhammer-api-production.up.railway.app'
-const ALL_UNITS_PAGE_SIZE = 500
 
 interface OpenHammerFaction {
   name: string
@@ -40,6 +39,25 @@ interface OpenHammerUnit {
   keywords?: unknown[]
 }
 
+interface OpenHammerUnitCount {
+  count: number
+}
+
+export interface GetUnitsOptions {
+  limit: number
+  offset: number
+  name?: string
+  faction?: string
+  factionType?: string
+  unitType?: string
+  sortBy?: string
+}
+
+export interface PaginatedUnits {
+  units: Unit[]
+  totalCount: number | null
+}
+
 function isOpenHammerFaction(value: unknown): value is OpenHammerFaction {
   if (typeof value !== 'object' || value === null) {
     return false
@@ -52,6 +70,16 @@ function isOpenHammerFaction(value: unknown): value is OpenHammerFaction {
     typeof faction.faction_type === 'string' &&
     typeof faction.unit_count === 'number'
   )
+}
+
+function isOpenHammerUnitCount(value: unknown): value is OpenHammerUnitCount {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const countResponse = value as Record<string, unknown>
+
+  return typeof countResponse.count === 'number'
 }
 
 function mapFaction(faction: OpenHammerFaction): Faction {
@@ -184,6 +212,16 @@ function mapUnit(unit: OpenHammerUnit): Unit {
   }
 }
 
+function addOptionalParam(
+  searchParams: URLSearchParams,
+  name: string,
+  value: string | undefined,
+): void {
+  if (value) {
+    searchParams.set(name, value)
+  }
+}
+
 export async function getFactions(signal?: AbortSignal): Promise<Faction[]> {
   const response = await fetch(`${API_BASE_URL}/factions`, { signal })
 
@@ -223,33 +261,68 @@ export async function getUnitsByFaction(
   return responseBody.map(mapUnit)
 }
 
-export async function getUnits(signal?: AbortSignal): Promise<Unit[]> {
-  const units: Unit[] = []
-  let offset = 0
+async function getUnitCount(
+  options: GetUnitsOptions,
+  signal?: AbortSignal,
+): Promise<number | null> {
+  if (options.name || options.unitType) {
+    return null
+  }
 
-  while (true) {
-    const response = await fetch(
-      `${API_BASE_URL}/units?limit=${ALL_UNITS_PAGE_SIZE}&offset=${offset}`,
-      { signal },
-    )
+  const searchParams = new URLSearchParams()
+  addOptionalParam(searchParams, 'faction', options.faction)
+  addOptionalParam(searchParams, 'faction_type', options.factionType)
 
-    if (!response.ok) {
-      throw new Error(`OpenHammer API returned status ${response.status}.`)
-    }
+  const queryString = searchParams.toString()
+  const response = await fetch(
+    `${API_BASE_URL}/units/count${queryString ? `?${queryString}` : ''}`,
+    { signal },
+  )
 
-    const responseBody: unknown = await response.json()
+  if (!response.ok) {
+    throw new Error(`OpenHammer API returned status ${response.status}.`)
+  }
 
-    if (!Array.isArray(responseBody) || !responseBody.every(isOpenHammerUnit)) {
-      throw new Error('OpenHammer API returned an unexpected units response.')
-    }
+  const responseBody: unknown = await response.json()
 
-    units.push(...responseBody.map(mapUnit))
+  if (!isOpenHammerUnitCount(responseBody)) {
+    throw new Error('OpenHammer API returned an unexpected unit count response.')
+  }
 
-    if (responseBody.length < ALL_UNITS_PAGE_SIZE) {
-      return units
-    }
+  return responseBody.count
+}
 
-    offset += ALL_UNITS_PAGE_SIZE
+export async function getUnits(
+  options: GetUnitsOptions,
+  signal?: AbortSignal,
+): Promise<PaginatedUnits> {
+  const searchParams = new URLSearchParams()
+  searchParams.set('limit', String(options.limit))
+  searchParams.set('offset', String(options.offset))
+  addOptionalParam(searchParams, 'name', options.name)
+  addOptionalParam(searchParams, 'faction', options.faction)
+  addOptionalParam(searchParams, 'faction_type', options.factionType)
+  addOptionalParam(searchParams, 'type', options.unitType)
+  addOptionalParam(searchParams, 'sort_by', options.sortBy)
+
+  const [unitResponse, totalCount] = await Promise.all([
+    fetch(`${API_BASE_URL}/units?${searchParams.toString()}`, { signal }),
+    getUnitCount(options, signal),
+  ])
+
+  if (!unitResponse.ok) {
+    throw new Error(`OpenHammer API returned status ${unitResponse.status}.`)
+  }
+
+  const responseBody: unknown = await unitResponse.json()
+
+  if (!Array.isArray(responseBody) || !responseBody.every(isOpenHammerUnit)) {
+    throw new Error('OpenHammer API returned an unexpected units response.')
+  }
+
+  return {
+    units: responseBody.map(mapUnit),
+    totalCount,
   }
 }
 

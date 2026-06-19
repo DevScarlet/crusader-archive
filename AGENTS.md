@@ -117,3 +117,29 @@ Before work is considered complete:
 * Tests must pass if tests exist.
 * The app should run without obvious console errors.
 * User-facing loading, empty, and error states should be handled where relevant.
+
+
+## Response format
+
+After completing a task, always end your response with these sections:
+
+### What I changed
+
+* Briefly list the important files changed and what changed in each.
+* Mention any important behavior, UI, or logic changes.
+* Mention tests or checks run, and whether they passed.
+
+### Commit message
+
+Provide one short, clear commit message in imperative style that summarizes the completed work.
+
+Format exactly:
+
+### What I changed
+
+* ...
+* ...
+
+### Commit message
+
+`Add server-side pagination to global units page`
