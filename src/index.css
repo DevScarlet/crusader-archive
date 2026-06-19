@@ -382,7 +382,13 @@ a:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  color: #555555;
+  font-size: 0.875rem;
+}
+
+.compare-note {
+  margin: 0 0 1rem;
   color: #555555;
   font-size: 0.875rem;
 }
@@ -589,10 +595,8 @@ a:focus-visible {
 }
 
 .help-tooltip__content {
-  position: absolute;
+  position: fixed;
   z-index: 1000;
-  right: -0.5rem;
-  bottom: calc(100% + 0.5rem);
   width: min(16.25rem, calc(100vw - 2rem));
   max-height: none;
   padding: 0.75rem;
@@ -615,18 +619,6 @@ a:focus-visible {
 
 .help-tooltip__content strong {
   margin-bottom: 0.25rem;
-}
-
-.unit-stats div:nth-child(-n + 3) .help-tooltip__content {
-  right: auto;
-  left: -0.5rem;
-}
-
-.unit-detail__type .help-tooltip__content,
-.label-with-help .help-tooltip__content,
-.heading-with-help .help-tooltip__content {
-  right: auto;
-  left: -0.5rem;
 }
 
 .detail-section {
@@ -677,11 +669,6 @@ a:focus-visible {
 .weapon-card .help-tooltip__button--text:hover,
 .weapon-card .help-tooltip__button--text:focus-visible {
   color: #333333;
-}
-
-.weapon-card dl div:nth-child(-n + 3) .help-tooltip__content {
-  right: auto;
-  left: -0.5rem;
 }
 
 .weapon-card dd {

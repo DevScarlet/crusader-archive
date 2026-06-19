@@ -2,7 +2,9 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type {
   FocusEvent,
   KeyboardEvent,
+  MouseEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 import type { GlossaryEntry } from '../data/glossary'
 
 interface HelpTooltipProps {
@@ -10,9 +12,16 @@ interface HelpTooltipProps {
   triggerText?: string
 }
 
+interface TooltipPosition {
+  left: number
+  top: number
+}
+
 function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [position, setPosition] = useState<TooltipPosition | null>(null)
   const wrapperRef = useRef<HTMLSpanElement>(null)
+  const tooltipRef = useRef<HTMLSpanElement>(null)
   const isPointerInteraction = useRef(false)
   const tooltipId = useId()
 
@@ -20,7 +29,8 @@ function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
     function handleOutsideClick(event: globalThis.MouseEvent) {
       if (
         event.target instanceof Node &&
-        !wrapperRef.current?.contains(event.target)
+        !wrapperRef.current?.contains(event.target) &&
+        !tooltipRef.current?.contains(event.target)
       ) {
         setIsOpen(false)
       }
@@ -41,6 +51,48 @@ function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
     }
   }, [])
 
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    function closeOnScroll() {
+      setIsOpen(false)
+    }
+
+    window.addEventListener('scroll', closeOnScroll, true)
+
+    return () => {
+      window.removeEventListener('scroll', closeOnScroll, true)
+    }
+  }, [isOpen])
+
+  function positionTooltip(button: HTMLButtonElement) {
+    const buttonBounds = button.getBoundingClientRect()
+    const tooltipWidth = Math.min(260, window.innerWidth - 32)
+    const estimatedTooltipHeight = 140
+    const rightSideLeft = buttonBounds.right + 8
+    const leftSideLeft = buttonBounds.left - tooltipWidth - 8
+    const hasRoomOnRight = rightSideLeft + tooltipWidth <= window.innerWidth - 16
+    const hasRoomOnLeft = leftSideLeft >= 16
+    const left = hasRoomOnRight
+      ? rightSideLeft
+      : hasRoomOnLeft
+        ? leftSideLeft
+        : Math.min(
+            Math.max(buttonBounds.left, 16),
+            window.innerWidth - tooltipWidth - 16,
+          )
+
+    setPosition({
+      left,
+      top: Math.min(
+        Math.max(buttonBounds.top - 8, 16),
+        window.innerHeight - estimatedTooltipHeight - 16,
+      ),
+    })
+  }
+
   function handleBlur(event: FocusEvent<HTMLSpanElement>) {
     if (!event.currentTarget.contains(event.relatedTarget)) {
       setIsOpen(false)
@@ -48,13 +100,20 @@ function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
     }
   }
 
-  function handleClick() {
-    setIsOpen((currentIsOpen) => !currentIsOpen)
+  function handleClick(event: MouseEvent<HTMLButtonElement>) {
+    if (isOpen) {
+      setIsOpen(false)
+    } else {
+      positionTooltip(event.currentTarget)
+      setIsOpen(true)
+    }
+
     isPointerInteraction.current = false
   }
 
-  function handleFocus() {
+  function handleFocus(event: FocusEvent<HTMLButtonElement>) {
     if (!isPointerInteraction.current) {
+      positionTooltip(event.currentTarget)
       setIsOpen(true)
     }
   }
@@ -87,12 +146,21 @@ function HelpTooltip({ entry, triggerText }: HelpTooltipProps) {
         {triggerText ?? '?'}
       </button>
 
-      {isOpen && (
-        <span className="help-tooltip__content" id={tooltipId} role="tooltip">
-          <strong>{entry.title}</strong>
-          <span>{entry.description}</span>
-        </span>
-      )}
+      {isOpen &&
+        position &&
+        createPortal(
+          <span
+            className="help-tooltip__content"
+            id={tooltipId}
+            ref={tooltipRef}
+            role="tooltip"
+            style={{ left: position.left, top: position.top }}
+          >
+            <strong>{entry.title}</strong>
+            <span>{entry.description}</span>
+          </span>,
+          document.body,
+        )}
     </span>
   )
 }

@@ -174,6 +174,10 @@ function Compare() {
             </span>
             <span>Points are not color-ranked.</span>
           </div>
+          <p className="compare-note">
+            Highlights individual stat differences, not which unit is overall
+            better.
+          </p>
 
           <div className="compare-table-wrapper">
             <table className="compare-table">
