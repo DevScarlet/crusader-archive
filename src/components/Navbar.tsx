@@ -12,6 +12,7 @@ function Navbar() {
           <NavLink to="/units">Units</NavLink>
           <NavLink to="/favorites">Favorites</NavLink>
           <NavLink to="/compare">Compare</NavLink>
+          <NavLink to="/army-planner">Army Planner</NavLink>
         </div>
       </nav>
     </header>

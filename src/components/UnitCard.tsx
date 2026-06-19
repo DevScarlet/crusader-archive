@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { glossary } from '../data/glossary'
+import { useArmyPlanner } from '../hooks/useArmyPlanner'
 import type { Unit, UnitStats } from '../types/unit'
 import FavoriteButton from './FavoriteButton'
 import HelpTooltip from './HelpTooltip'
@@ -32,6 +33,7 @@ function UnitCard({
   canCompareMore = true,
   onToggleCompare,
 }: UnitCardProps) {
+  const { addUnit, message, clearMessage } = useArmyPlanner()
   const unitIdentifier = unit.id ?? unit.name
   const availableStats = statLabels.filter(
     ([statName]) => unit.stats?.[statName] !== undefined,
@@ -98,6 +100,23 @@ function UnitCard({
                 ? 'Compare'
                 : 'Compare limit reached'}
           </button>
+        )}
+
+        <button
+          type="button"
+          className="army-planner-add-button"
+          onClick={() => addUnit(unit)}
+        >
+          Add to army
+        </button>
+
+        {message && (
+          <p className="inline-message" role="status">
+            {message}{' '}
+            <button type="button" onClick={clearMessage}>
+              Dismiss
+            </button>
+          </p>
         )}
       </div>
     </article>

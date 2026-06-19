@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import ArmyPlanner from './pages/ArmyPlanner'
 import Navbar from './components/Navbar'
 import Compare from './pages/Compare'
 import FactionDetail from './pages/FactionDetail'
@@ -21,6 +22,7 @@ function App() {
           <Route path="/units/:unitIdentifier" element={<UnitDetail />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/army-planner" element={<ArmyPlanner />} />
         </Routes>
       </main>
     </>

@@ -4,6 +4,7 @@ import { getUnit } from '../api/openHammerApi'
 import FavoriteButton from '../components/FavoriteButton'
 import HelpTooltip from '../components/HelpTooltip'
 import { glossary } from '../data/glossary'
+import { useArmyPlanner } from '../hooks/useArmyPlanner'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Unit, UnitStats, UnitWeapon } from '../types/unit'
 
@@ -120,6 +121,11 @@ function UnitDetail() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [requestNumber, setRequestNumber] = useState(0)
   const { isFavorite, toggleFavorite } = useFavorites()
+  const {
+    addUnit,
+    message: armyPlannerMessage,
+    clearMessage: clearArmyPlannerMessage,
+  } = useArmyPlanner()
 
   let unitIdentifier: string | null = null
 
@@ -251,6 +257,19 @@ function UnitDetail() {
             <p className="unit-detail__points">
               <strong>{unit.basePoints}</strong> base points{' '}
               <HelpTooltip entry={glossary.points} />
+            </p>
+          )}
+
+          <button type="button" onClick={() => addUnit(unit)}>
+            Add to army
+          </button>
+
+          {armyPlannerMessage && (
+            <p className="inline-message" role="status">
+              {armyPlannerMessage}{' '}
+              <button type="button" onClick={clearArmyPlannerMessage}>
+                Dismiss
+              </button>
             </p>
           )}
 
