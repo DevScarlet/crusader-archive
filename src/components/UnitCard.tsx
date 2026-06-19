@@ -8,6 +8,9 @@ interface UnitCardProps {
   unit: Unit
   isFavorite?: boolean
   onToggleFavorite?: (unit: Unit) => void
+  isCompared?: boolean
+  canCompareMore?: boolean
+  onToggleCompare?: (unit: Unit) => void
 }
 
 const statLabels: Array<
@@ -25,6 +28,9 @@ function UnitCard({
   unit,
   isFavorite = false,
   onToggleFavorite,
+  isCompared = false,
+  canCompareMore = true,
+  onToggleCompare,
 }: UnitCardProps) {
   const unitIdentifier = unit.id ?? unit.name
   const availableStats = statLabels.filter(
@@ -83,6 +89,22 @@ function UnitCard({
         >
           View unit
         </Link>
+
+        {onToggleCompare && (
+          <button
+            type="button"
+            className="compare-toggle"
+            aria-pressed={isCompared}
+            disabled={!isCompared && !canCompareMore}
+            onClick={() => onToggleCompare(unit)}
+          >
+            {isCompared
+              ? 'Remove from compare'
+              : canCompareMore
+                ? 'Compare'
+                : 'Compare limit reached'}
+          </button>
+        )}
       </div>
     </article>
   )

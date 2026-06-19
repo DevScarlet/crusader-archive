@@ -331,6 +331,16 @@ a:focus-visible {
   margin-top: 1rem;
 }
 
+.compare-toggle {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.compare-toggle[disabled] {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .favorite-star {
   flex: 0 0 auto;
   padding: 0.125rem;
@@ -348,6 +358,67 @@ a:focus-visible {
 
 .favorites-section {
   margin-top: 2.5rem;
+}
+
+.compare-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.compare-actions .results-count {
+  margin-bottom: 0;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.compare-card {
+  padding: 1.25rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.compare-card h2 {
+  margin: 0.25rem 0;
+  font-size: 1.25rem;
+}
+
+.compare-card .unit-stats {
+  grid-template-columns: repeat(6, minmax(2.5rem, 1fr));
+}
+
+.compare-card .unit-stats div {
+  min-width: 2.5rem;
+}
+
+.compare-card button {
+  margin-top: 1rem;
+}
+
+.compare-details {
+  margin: 1rem 0 0;
+}
+
+.compare-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.compare-details dt {
+  font-weight: 700;
+}
+
+.compare-details dd {
+  margin: 0;
 }
 
 .favorite-unit-group {

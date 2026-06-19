@@ -2,6 +2,7 @@ import FactionCard from '../components/FactionCard'
 import HelpTooltip from '../components/HelpTooltip'
 import UnitCard from '../components/UnitCard'
 import { glossary } from '../data/glossary'
+import { useComparison } from '../hooks/useComparison'
 import { useFavorites } from '../hooks/useFavorites'
 import { compareOptionalNumbers } from '../utils/sort'
 import { useState } from 'react'
@@ -34,6 +35,7 @@ function Favorites() {
     isFactionFavorite,
     toggleFactionFavorite,
   } = useFavorites()
+  const { isCompared, canAddUnit, toggleComparison } = useComparison()
 
   function clearFactionFilters() {
     setFactionSearchTerm('')
@@ -257,6 +259,9 @@ function Favorites() {
                     unit={unit}
                     isFavorite={isFavorite(unit)}
                     onToggleFavorite={toggleFavorite}
+                    isCompared={isCompared(unit)}
+                    canCompareMore={canAddUnit(unit)}
+                    onToggleCompare={toggleComparison}
                   />
                 ))}
               </div>

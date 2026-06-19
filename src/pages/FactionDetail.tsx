@@ -5,6 +5,7 @@ import FavoriteButton from '../components/FavoriteButton'
 import UnitCard from '../components/UnitCard'
 import HelpTooltip from '../components/HelpTooltip'
 import { glossary } from '../data/glossary'
+import { useComparison } from '../hooks/useComparison'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Faction } from '../types/faction'
 import type { Unit } from '../types/unit'
@@ -30,6 +31,7 @@ function FactionDetail() {
     isFactionFavorite,
     toggleFactionFavorite,
   } = useFavorites()
+  const { isCompared, canAddUnit, toggleComparison } = useComparison()
 
   let factionName: string | null = null
 
@@ -275,6 +277,9 @@ function FactionDetail() {
                   unit={unit}
                   isFavorite={isFavorite(unit)}
                   onToggleFavorite={toggleFavorite}
+                  isCompared={isCompared(unit)}
+                  canCompareMore={canAddUnit(unit)}
+                  onToggleCompare={toggleComparison}
                 />
               ))}
             </div>

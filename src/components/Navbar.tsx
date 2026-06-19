@@ -10,6 +10,7 @@ function Navbar() {
         <div className="nav-links">
           <NavLink to="/factions">Factions</NavLink>
           <NavLink to="/favorites">Favorites</NavLink>
+          <NavLink to="/compare">Compare</NavLink>
         </div>
       </nav>
     </header>

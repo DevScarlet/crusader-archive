@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import Compare from './pages/Compare'
 import FactionDetail from './pages/FactionDetail'
 import Factions from './pages/Factions'
 import Favorites from './pages/Favorites'
@@ -17,6 +18,7 @@ function App() {
           <Route path="/factions/:factionName" element={<FactionDetail />} />
           <Route path="/units/:unitIdentifier" element={<UnitDetail />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/compare" element={<Compare />} />
         </Routes>
       </main>
     </>
