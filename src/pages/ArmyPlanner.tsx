@@ -299,6 +299,26 @@ function ArmyPlanner() {
                     Yes, clear it
                   </button>
                 </div>
+              ) : destructiveConfirmation?.type === 'remove-unit' ? (
+                <div className="inline-confirmation">
+                  <span>Remove {destructiveConfirmation.unit.name}?</span>
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    onClick={() => setDestructiveConfirmation(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="button-danger"
+                    onClick={() =>
+                      handleRemoveUnit(destructiveConfirmation.unit)
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
@@ -384,40 +404,18 @@ function ArmyPlanner() {
                     <td>{unit.points ?? 0}</td>
                     <td>{getSubtotal(unit)}</td>
                     <td>
-                      {destructiveConfirmation?.type === 'remove-unit' &&
-                      getUnitKey(destructiveConfirmation.unit) ===
-                        getUnitKey(unit) ? (
-                        <div className="inline-confirmation inline-confirmation--table">
-                          <span>Remove {unit.name}?</span>
-                          <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={() => setDestructiveConfirmation(null)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            className="button-danger"
-                            onClick={() => handleRemoveUnit(unit)}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          className="button-danger"
-                          onClick={() =>
-                            setDestructiveConfirmation({
-                              type: 'remove-unit',
-                              unit,
-                            })
-                          }
-                        >
-                          Remove
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className="button-danger"
+                        onClick={() =>
+                          setDestructiveConfirmation({
+                            type: 'remove-unit',
+                            unit,
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
                     </td>
                   </tr>
                 ))}
