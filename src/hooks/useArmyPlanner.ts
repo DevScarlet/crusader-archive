@@ -4,6 +4,7 @@ import type { Unit } from '../types/unit'
 
 const ARMY_PLANNER_STORAGE_KEY = 'crusader-archive-army-planner'
 const ARMY_PLANNER_UPDATED_EVENT = 'crusader-archive-army-planner-updated'
+const ARMY_PLANNER_TOAST_EVENT = 'crusader-archive-toast'
 
 export interface ArmyPlannerUnit {
   id?: string
@@ -16,13 +17,58 @@ export interface ArmyPlannerUnit {
 }
 
 export interface ArmyList {
+  id: string
   name: string
   faction?: string
   factionType?: string
   units: ArmyPlannerUnit[]
+  createdAt: string
 }
 
-function getUnitKey(unit: Pick<ArmyPlannerUnit, 'id' | 'faction' | 'name'>): string {
+export interface ArmyPlannerToast {
+  message: string
+  actionLabel?: string
+  actionTo?: string
+}
+
+interface ArmyPlannerState {
+  activeListId: string
+  lists: ArmyList[]
+}
+
+interface UseArmyPlannerResult {
+  activeList: ArmyList
+  lists: ArmyList[]
+  totalUnits: number
+  totalPoints: number
+  setActiveListId: (listId: string) => void
+  createList: () => void
+  deleteList: (listId: string) => void
+  updateListName: (name: string) => boolean
+  updateListFaction: (faction?: Faction) => void
+  addUnit: (unit: Unit) => void
+  getUnitQuantity: (unit: Unit) => number
+  updateQuantity: (unit: ArmyPlannerUnit, quantity: number) => void
+  removeUnit: (unit: ArmyPlannerUnit) => void
+  clearList: () => void
+}
+
+function createListId(): string {
+  return `army-list-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function createDefaultList(): ArmyList {
+  return {
+    id: 'default-army-list',
+    name: 'My Army List',
+    units: [],
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function getUnitKey(
+  unit: Pick<ArmyPlannerUnit, 'id' | 'faction' | 'name'>,
+): string {
   return unit.id ?? `${unit.faction}:${unit.name}`
 }
 
@@ -63,15 +109,17 @@ function parseArmyUnit(value: unknown): ArmyPlannerUnit | null {
   }
 }
 
-function parseArmyList(value: unknown): ArmyList {
+function parseArmyList(value: unknown, fallbackId: string): ArmyList | null {
   if (typeof value !== 'object' || value === null) {
-    return {
-      name: 'My Army List',
-      units: [],
-    }
+    return null
   }
 
   const list = value as Record<string, unknown>
+
+  if (typeof list.name !== 'string') {
+    return null
+  }
+
   const units = Array.isArray(list.units)
     ? list.units
         .map(parseArmyUnit)
@@ -79,38 +127,103 @@ function parseArmyList(value: unknown): ArmyList {
     : []
 
   return {
-    name: typeof list.name === 'string' ? list.name : 'My Army List',
+    id: getOptionalString(list.id) ?? fallbackId,
+    name: list.name,
     faction: getOptionalString(list.faction),
     factionType: getOptionalString(list.factionType),
     units,
+    createdAt: getOptionalString(list.createdAt) ?? new Date().toISOString(),
   }
 }
 
-function readArmyList(): ArmyList {
-  try {
-    const storedList = localStorage.getItem(ARMY_PLANNER_STORAGE_KEY)
+function normalizeState(state: ArmyPlannerState): ArmyPlannerState {
+  if (state.lists.length === 0) {
+    const defaultList = createDefaultList()
 
-    if (!storedList) {
+    return {
+      activeListId: defaultList.id,
+      lists: [defaultList],
+    }
+  }
+
+  const activeListExists = state.lists.some(
+    (list) => list.id === state.activeListId,
+  )
+
+  return {
+    activeListId: activeListExists ? state.activeListId : state.lists[0].id,
+    lists: state.lists,
+  }
+}
+
+function readPlannerState(): ArmyPlannerState {
+  try {
+    const storedState = localStorage.getItem(ARMY_PLANNER_STORAGE_KEY)
+
+    if (!storedState) {
+      const defaultList = createDefaultList()
+
       return {
-        name: 'My Army List',
-        units: [],
+        activeListId: defaultList.id,
+        lists: [defaultList],
       }
     }
 
-    const parsedList: unknown = JSON.parse(storedList)
+    const parsedState: unknown = JSON.parse(storedState)
 
-    return parseArmyList(parsedList)
-  } catch {
-    return {
-      name: 'My Army List',
-      units: [],
+    if (
+      typeof parsedState === 'object' &&
+      parsedState !== null &&
+      Array.isArray((parsedState as Record<string, unknown>).lists)
+    ) {
+      const plannerState = parsedState as Record<string, unknown>
+      const lists = (plannerState.lists as unknown[])
+        .map((list, index) => parseArmyList(list, `army-list-${index}`))
+        .filter((list): list is ArmyList => list !== null)
+
+      return normalizeState({
+        activeListId:
+          getOptionalString(plannerState.activeListId) ??
+          lists[0]?.id ??
+          'default-army-list',
+        lists,
+      })
     }
+
+    const migratedList = parseArmyList(parsedState, 'legacy-army-list')
+
+    if (migratedList) {
+      return {
+        activeListId: migratedList.id,
+        lists: [migratedList],
+      }
+    }
+  } catch {
+    // Fall through to a clean default state.
+  }
+
+  const defaultList = createDefaultList()
+
+  return {
+    activeListId: defaultList.id,
+    lists: [defaultList],
   }
 }
 
-function saveArmyList(list: ArmyList): void {
-  localStorage.setItem(ARMY_PLANNER_STORAGE_KEY, JSON.stringify(list))
+function savePlannerState(state: ArmyPlannerState): void {
+  localStorage.setItem(
+    ARMY_PLANNER_STORAGE_KEY,
+    JSON.stringify(normalizeState(state)),
+  )
   window.dispatchEvent(new Event(ARMY_PLANNER_UPDATED_EVENT))
+}
+
+function showToast(toast: ArmyPlannerToast): void {
+  window.dispatchEvent(
+    new CustomEvent<ArmyPlannerToast>(ARMY_PLANNER_TOAST_EVENT, {
+      detail: toast,
+    }),
+  )
 }
 
 function toArmyPlannerUnit(unit: Unit): ArmyPlannerUnit {
@@ -127,13 +240,17 @@ function toArmyPlannerUnit(unit: Unit): ArmyPlannerUnit {
   }
 }
 
-export function useArmyPlanner() {
-  const [armyList, setArmyList] = useState<ArmyList>(readArmyList)
-  const [message, setMessage] = useState<string | null>(null)
+function getDisplayListName(list: ArmyList): string {
+  return list.name.trim() || 'Untitled army list'
+}
+
+export function useArmyPlanner(): UseArmyPlannerResult {
+  const [plannerState, setPlannerState] =
+    useState<ArmyPlannerState>(readPlannerState)
 
   useEffect(() => {
     function refreshArmyList() {
-      setArmyList(readArmyList())
+      setPlannerState(readPlannerState())
     }
 
     window.addEventListener('storage', refreshArmyList)
@@ -145,117 +262,191 @@ export function useArmyPlanner() {
     }
   }, [])
 
-  function updateListName(name: string): void {
-    const currentList = readArmyList()
+  const activeList =
+    plannerState.lists.find((list) => list.id === plannerState.activeListId) ??
+    plannerState.lists[0]
 
-    saveArmyList({
-      ...currentList,
-      name: name.trim() || 'My Army List',
+  function saveActiveList(updatedList: ArmyList): void {
+    const currentState = readPlannerState()
+    const updatedLists = currentState.lists.map((list) =>
+      list.id === updatedList.id ? updatedList : list,
+    )
+
+    savePlannerState({
+      ...currentState,
+      lists: updatedLists,
+      activeListId: updatedList.id,
     })
-    setMessage(null)
+  }
+
+  function setActiveListId(listId: string): void {
+    const currentState = readPlannerState()
+
+    if (!currentState.lists.some((list) => list.id === listId)) {
+      return
+    }
+
+    savePlannerState({
+      ...currentState,
+      activeListId: listId,
+    })
+  }
+
+  function createList(): void {
+    const currentState = readPlannerState()
+    const newList: ArmyList = {
+      id: createListId(),
+      name: 'New army list',
+      units: [],
+      createdAt: new Date().toISOString(),
+    }
+
+    savePlannerState({
+      activeListId: newList.id,
+      lists: [...currentState.lists, newList],
+    })
+  }
+
+  function deleteList(listId: string): void {
+    const currentState = readPlannerState()
+    const remainingLists = currentState.lists.filter(
+      (list) => list.id !== listId,
+    )
+    const normalizedState = normalizeState({
+      activeListId: remainingLists[0]?.id ?? 'default-army-list',
+      lists: remainingLists,
+    })
+
+    savePlannerState(normalizedState)
+  }
+
+  function updateListName(name: string): boolean {
+    const trimmedName = name.trim()
+
+    if (!trimmedName) {
+      return false
+    }
+
+    saveActiveList({
+      ...activeList,
+      name: trimmedName,
+    })
+
+    return true
   }
 
   function updateListFaction(faction?: Faction): void {
-    const currentList = readArmyList()
-
-    saveArmyList({
-      ...currentList,
+    saveActiveList({
+      ...activeList,
       faction: faction?.name,
       factionType: faction?.factionType,
       units: faction
-        ? currentList.units.filter((unit) => unit.faction === faction.name)
-        : currentList.units,
+        ? activeList.units.filter((unit) => unit.faction === faction.name)
+        : activeList.units,
     })
-    setMessage(null)
   }
 
   function addUnit(unit: Unit): void {
-    const currentList = readArmyList()
+    const listFaction = activeList.faction ?? activeList.units[0]?.faction
 
-    if (currentList.faction && currentList.faction !== unit.faction) {
-      setMessage(
-        `This army list is for ${currentList.faction}. This version supports one faction per list.`,
-      )
+    if (listFaction && listFaction !== unit.faction) {
+      showToast({
+        message: `This army list is for ${listFaction}. This version supports one faction per list.`,
+        actionLabel: 'View army',
+        actionTo: '/army-planner',
+      })
       return
     }
 
     const newUnit = toArmyPlannerUnit(unit)
     const unitKey = getUnitKey(newUnit)
-    const existingUnit = currentList.units.find(
+    const existingUnit = activeList.units.find(
       (armyUnit) => getUnitKey(armyUnit) === unitKey,
     )
     const updatedUnits = existingUnit
-      ? currentList.units.map((armyUnit) =>
+      ? activeList.units.map((armyUnit) =>
           getUnitKey(armyUnit) === unitKey
             ? { ...armyUnit, quantity: armyUnit.quantity + 1 }
             : armyUnit,
         )
-      : [...currentList.units, newUnit]
+      : [...activeList.units, newUnit]
+    const updatedQuantity = existingUnit ? existingUnit.quantity + 1 : 1
 
-    saveArmyList({
-      ...currentList,
-      faction: currentList.faction ?? unit.faction,
-      factionType: currentList.factionType ?? unit.factionType,
+    saveActiveList({
+      ...activeList,
+      faction: activeList.faction ?? listFaction ?? unit.faction,
+      factionType: activeList.factionType ?? unit.factionType,
       units: updatedUnits,
     })
-    setMessage(`${unit.name} added to ${currentList.name}.`)
+    showToast({
+      message: `${unit.name} added to ${getDisplayListName(activeList)} (×${updatedQuantity}).`,
+      actionLabel: 'View army',
+      actionTo: '/army-planner',
+    })
+  }
+
+  function getUnitQuantity(unit: Unit): number {
+    const unitKey = getUnitKey(toArmyPlannerUnit(unit))
+    const existingUnit = activeList.units.find(
+      (armyUnit) => getUnitKey(armyUnit) === unitKey,
+    )
+
+    return existingUnit?.quantity ?? 0
   }
 
   function updateQuantity(unit: ArmyPlannerUnit, quantity: number): void {
     const safeQuantity = Math.max(1, Math.floor(quantity))
     const unitKey = getUnitKey(unit)
-    const currentList = readArmyList()
-    const updatedUnits = currentList.units.map((armyUnit) =>
+    const updatedUnits = activeList.units.map((armyUnit) =>
       getUnitKey(armyUnit) === unitKey
         ? { ...armyUnit, quantity: safeQuantity }
         : armyUnit,
     )
 
-    saveArmyList({ ...currentList, units: updatedUnits })
+    saveActiveList({ ...activeList, units: updatedUnits })
   }
 
   function removeUnit(unit: ArmyPlannerUnit): void {
     const unitKey = getUnitKey(unit)
-    const currentList = readArmyList()
-    const updatedUnits = currentList.units.filter(
+    const updatedUnits = activeList.units.filter(
       (armyUnit) => getUnitKey(armyUnit) !== unitKey,
     )
 
-    saveArmyList({ ...currentList, units: updatedUnits })
+    saveActiveList({ ...activeList, units: updatedUnits })
   }
 
   function clearList(): void {
-    const currentList = readArmyList()
-
-    saveArmyList({
-      name: currentList.name,
-      faction: currentList.faction,
-      factionType: currentList.factionType,
+    saveActiveList({
+      ...activeList,
       units: [],
     })
-    setMessage('Army list cleared.')
   }
 
-  const totalUnits = armyList.units.reduce(
+  const totalUnits = activeList.units.reduce(
     (total, unit) => total + unit.quantity,
     0,
   )
-  const totalPoints = armyList.units.reduce(
+  const totalPoints = activeList.units.reduce(
     (total, unit) => total + (unit.points ?? 0) * unit.quantity,
     0,
   )
 
   return {
-    armyList,
-    message,
+    activeList,
+    lists: plannerState.lists,
     totalUnits,
     totalPoints,
+    setActiveListId,
+    createList,
+    deleteList,
     updateListName,
     updateListFaction,
     addUnit,
+    getUnitQuantity,
     updateQuantity,
     removeUnit,
     clearList,
-    clearMessage: () => setMessage(null),
   }
 }
+
+export { ARMY_PLANNER_TOAST_EVENT }

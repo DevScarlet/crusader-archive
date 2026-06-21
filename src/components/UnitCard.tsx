@@ -33,8 +33,9 @@ function UnitCard({
   canCompareMore = true,
   onToggleCompare,
 }: UnitCardProps) {
-  const { addUnit, message, clearMessage } = useArmyPlanner()
+  const { addUnit, getUnitQuantity } = useArmyPlanner()
   const unitIdentifier = unit.id ?? unit.name
+  const armyQuantity = getUnitQuantity(unit)
   const availableStats = statLabels.filter(
     ([statName]) => unit.stats?.[statName] !== undefined,
   )
@@ -86,38 +87,33 @@ function UnitCard({
           </dl>
         )}
 
-        {onToggleCompare && (
+        <div className="unit-card-actions">
           <button
             type="button"
-            className="compare-toggle"
-            aria-pressed={isCompared}
-            disabled={!isCompared && !canCompareMore}
-            onClick={() => onToggleCompare(unit)}
+            className="army-planner-add-button"
+            onClick={() => addUnit(unit)}
           >
-            {isCompared
-              ? 'Remove from compare'
-              : canCompareMore
-                ? 'Compare'
-                : 'Compare limit reached'}
+            {armyQuantity > 0
+              ? `Add another (added ×${armyQuantity})`
+              : 'Add to army'}
           </button>
-        )}
 
-        <button
-          type="button"
-          className="army-planner-add-button"
-          onClick={() => addUnit(unit)}
-        >
-          Add to army
-        </button>
-
-        {message && (
-          <p className="inline-message" role="status">
-            {message}{' '}
-            <button type="button" onClick={clearMessage}>
-              Dismiss
+          {onToggleCompare && (
+            <button
+              type="button"
+              className="compare-toggle"
+              aria-pressed={isCompared}
+              disabled={!isCompared && !canCompareMore}
+              onClick={() => onToggleCompare(unit)}
+            >
+              {isCompared
+                ? 'Remove from compare'
+                : canCompareMore
+                  ? 'Compare'
+                  : 'Compare limit reached'}
             </button>
-          </p>
-        )}
+          )}
+        </div>
       </div>
     </article>
   )

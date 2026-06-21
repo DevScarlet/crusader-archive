@@ -421,14 +421,37 @@ a:focus-visible {
   margin-top: 1rem;
 }
 
-.compare-toggle {
-  display: block;
-  margin-top: 0.75rem;
+.unit-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.unit-card-actions button {
+  flex: 1 1 10rem;
+}
+
+.compare-toggle,
+.army-planner-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .army-planner-add-button {
-  display: block;
-  margin-top: 0.75rem;
+  background: #242424;
+}
+
+.compare-toggle {
+  border: 1px solid #242424;
+  color: #242424;
+  background: #ffffff;
+}
+
+.compare-toggle:hover {
+  color: #ffffff;
+  background: #444444;
 }
 
 .compare-toggle[disabled] {
@@ -436,18 +459,9 @@ a:focus-visible {
   opacity: 0.65;
 }
 
-.inline-message {
-  margin: 0.75rem 0 0;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  background: #f0f0ed;
-  color: #333333;
-}
-
-.inline-message button {
-  margin-left: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+.compare-toggle[disabled]:hover {
+  color: #242424;
+  background: #ffffff;
 }
 
 .favorite-star {
@@ -646,6 +660,36 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.army-list-selector-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.army-list-selector-row .form-field {
+  flex: 1 1 16rem;
+}
+
+.delete-list-confirmation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.field-error {
+  margin: 0.5rem 0 0;
+  color: #a22b2b;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
 .army-list-settings {
   display: grid;
   grid-template-columns: minmax(12rem, 2fr) minmax(12rem, 1fr);
@@ -677,6 +721,39 @@ a:focus-visible {
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.empty-army-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 1rem;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button-link--primary {
+  color: #ffffff;
+  background: #242424;
+}
+
+.button-link--primary:hover {
+  background: #444444;
+}
+
+.text-link {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
 }
 
 .army-list-table-wrapper {
@@ -752,6 +829,10 @@ a:focus-visible {
 
 .unit-detail__points {
   font-size: 1.125rem;
+}
+
+.unit-detail__points + .army-planner-add-button {
+  margin-bottom: 1rem;
 }
 
 .unit-detail__stats {
@@ -911,6 +992,41 @@ a:focus-visible {
   background: #e8e8e4;
 }
 
+.toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  width: min(100% - 2rem, 24rem);
+  padding: 1rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 18%);
+}
+
+.toast p {
+  margin: 0;
+}
+
+.toast__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.toast__actions a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.toast__actions button {
+  padding: 0.375rem 0.625rem;
+}
+
 @media (max-width: 48rem) {
   .unit-controls,
   .browse-controls,
@@ -924,6 +1040,20 @@ a:focus-visible {
 
   .army-list-heading-row {
     display: grid;
+  }
+
+  .army-list-selector-row,
+  .unit-card-actions,
+  .toast__actions {
+    align-items: stretch;
+  }
+
+  .army-list-selector-row > button,
+  .delete-list-confirmation,
+  .unit-card-actions button,
+  .toast__actions a,
+  .toast__actions button {
+    width: 100%;
   }
 
   .results-toolbar {

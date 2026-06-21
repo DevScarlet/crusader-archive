@@ -125,13 +125,13 @@ After completing a task, always end your response with these sections:
 
 ### What I changed
 
-* Briefly list the important files changed and what changed in each.
+* Briefly list the important files changed and what changed in each (each file change).
 * Mention any important behavior, UI, or logic changes.
 * Mention tests or checks run, and whether they passed.
 
 ### Commit message
 
-Provide one short, clear commit message in imperative style that summarizes the completed work.
+Provide a clear commit message (in bullet point form) in imperative style that summarizes the completed work.
 
 Format exactly:
 
@@ -142,4 +142,5 @@ Format exactly:
 
 ### Commit message
 
-`Add server-side pagination to global units page`
+- ...
+- ...

@@ -123,8 +123,7 @@ function UnitDetail() {
   const { isFavorite, toggleFavorite } = useFavorites()
   const {
     addUnit,
-    message: armyPlannerMessage,
-    clearMessage: clearArmyPlannerMessage,
+    getUnitQuantity,
   } = useArmyPlanner()
 
   let unitIdentifier: string | null = null
@@ -182,6 +181,7 @@ function UnitDetail() {
   const availableStats = statLabels.filter(
     ([statName]) => unit?.stats?.[statName] !== undefined,
   )
+  const armyQuantity = unit ? getUnitQuantity(unit) : 0
 
   return (
     <section aria-labelledby="unit-heading">
@@ -260,18 +260,15 @@ function UnitDetail() {
             </p>
           )}
 
-          <button type="button" onClick={() => addUnit(unit)}>
-            Add to army
+          <button
+            type="button"
+            className="army-planner-add-button"
+            onClick={() => addUnit(unit)}
+          >
+            {armyQuantity > 0
+              ? `Add another (added ×${armyQuantity})`
+              : 'Add to army'}
           </button>
-
-          {armyPlannerMessage && (
-            <p className="inline-message" role="status">
-              {armyPlannerMessage}{' '}
-              <button type="button" onClick={clearArmyPlannerMessage}>
-                Dismiss
-              </button>
-            </p>
-          )}
 
           {availableStats.length > 0 && (
             <dl className="unit-stats unit-detail__stats">

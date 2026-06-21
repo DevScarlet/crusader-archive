@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getFactions } from '../api/openHammerApi'
 import {
   type ArmyPlannerUnit,
+  type ArmyList,
   useArmyPlanner,
 } from '../hooks/useArmyPlanner'
 import type { Faction } from '../types/faction'
@@ -11,14 +12,61 @@ function getSubtotal(unit: ArmyPlannerUnit): number {
   return (unit.points ?? 0) * unit.quantity
 }
 
+function getDisplayName(list: ArmyList): string {
+  return list.name.trim() || 'Untitled army list'
+}
+
+interface ArmyListNameFieldProps {
+  activeList: ArmyList
+  onSaveName: (name: string) => boolean
+}
+
+function ArmyListNameField({
+  activeList,
+  onSaveName,
+}: ArmyListNameFieldProps) {
+  const [draftName, setDraftName] = useState(activeList.name)
+  const [showNameError, setShowNameError] = useState(false)
+
+  function saveName() {
+    const saved = onSaveName(draftName)
+    setShowNameError(!saved)
+  }
+
+  return (
+    <div className="form-field">
+      <label htmlFor="army-list-name">Army list name</label>
+      <input
+        id="army-list-name"
+        value={draftName}
+        onChange={(event) => {
+          setDraftName(event.target.value)
+          setShowNameError(false)
+        }}
+        onBlur={saveName}
+      />
+      {showNameError && (
+        <p className="field-error" role="alert">
+          Army list name is required.
+        </p>
+      )}
+    </div>
+  )
+}
+
 function ArmyPlanner() {
   const [factions, setFactions] = useState<Faction[]>([])
   const [factionsError, setFactionsError] = useState<string | null>(null)
   const [isConfirmingClear, setIsConfirmingClear] = useState(false)
+  const [deleteListId, setDeleteListId] = useState<string | null>(null)
   const {
-    armyList,
+    activeList,
+    lists,
     totalUnits,
     totalPoints,
+    setActiveListId,
+    createList,
+    deleteList,
     updateListName,
     updateListFaction,
     updateQuantity,
@@ -64,6 +112,15 @@ function ArmyPlanner() {
     setIsConfirmingClear(false)
   }
 
+  function handleDeleteList() {
+    if (!deleteListId) {
+      return
+    }
+
+    deleteList(deleteListId)
+    setDeleteListId(null)
+  }
+
   return (
     <section aria-labelledby="army-planner-heading">
       <h1 id="army-planner-heading">Army Planner</h1>
@@ -92,21 +149,59 @@ function ArmyPlanner() {
         </div>
       </div>
 
-      <div className="army-list-settings">
+      <div className="army-list-selector-row">
         <div className="form-field">
-          <label htmlFor="army-list-name">Army list name</label>
-          <input
-            id="army-list-name"
-            value={armyList.name}
-            onChange={(event) => updateListName(event.target.value)}
-          />
+          <label htmlFor="active-army-list">Active army list</label>
+          <select
+            id="active-army-list"
+            value={activeList.id}
+            onChange={(event) => {
+              setActiveListId(event.target.value)
+              setDeleteListId(null)
+              setIsConfirmingClear(false)
+            }}
+          >
+            {lists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {getDisplayName(list)}
+              </option>
+            ))}
+          </select>
         </div>
+
+        <button type="button" onClick={createList}>
+          + New list
+        </button>
+
+        {deleteListId === activeList.id ? (
+          <div className="delete-list-confirmation">
+            <span>Delete this list?</span>
+            <button type="button" onClick={handleDeleteList}>
+              Yes, delete it
+            </button>
+            <button type="button" onClick={() => setDeleteListId(null)}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setDeleteListId(activeList.id)}>
+            Delete list
+          </button>
+        )}
+      </div>
+
+      <div className="army-list-settings">
+        <ArmyListNameField
+          key={activeList.id}
+          activeList={activeList}
+          onSaveName={updateListName}
+        />
 
         <div className="form-field">
           <label htmlFor="army-list-faction">Faction</label>
           <select
             id="army-list-faction"
-            value={armyList.faction ?? ''}
+            value={activeList.faction ?? ''}
             onChange={(event) => handleFactionChange(event.target.value)}
           >
             <option value="">Choose a faction</option>
@@ -121,11 +216,11 @@ function ArmyPlanner() {
 
       <div className="army-list-heading-row">
         <div>
-          <h2>{armyList.name}</h2>
-          <p>{armyList.faction ?? 'No faction selected yet'}</p>
+          <h2>{getDisplayName(activeList)}</h2>
+          <p>{activeList.faction ?? 'No faction selected yet'}</p>
         </div>
 
-        {armyList.units.length > 0 && (
+        {activeList.units.length > 0 && (
           <div className="clear-list-actions">
             {isConfirmingClear ? (
               <>
@@ -152,11 +247,21 @@ function ArmyPlanner() {
         )}
       </div>
 
-      {armyList.units.length === 0 ? (
-        <p className="status-message">
-          Your army list is empty. <Link to="/units">Browse units</Link> to add
-          something to the roster.
-        </p>
+      {activeList.units.length === 0 ? (
+        <div className="empty-army-list status-message">
+          <p>
+            This army list is empty. Browse units to add something to the
+            roster, or browse factions if you want to pick a theme first.
+          </p>
+          <div>
+            <Link className="button-link button-link--primary" to="/units">
+              Browse units
+            </Link>
+            <Link className="text-link" to="/factions">
+              Browse factions
+            </Link>
+          </div>
+        </div>
       ) : (
         <div className="army-list-table-wrapper">
           <table className="army-list-table">
@@ -170,7 +275,7 @@ function ArmyPlanner() {
               </tr>
             </thead>
             <tbody>
-              {armyList.units.map((unit) => (
+              {activeList.units.map((unit) => (
                 <tr key={unit.id ?? `${unit.faction}-${unit.name}`}>
                   <th scope="row">
                     <Link

@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import ArmyPlanner from './pages/ArmyPlanner'
 import Navbar from './components/Navbar'
+import Toast from './components/Toast'
 import Compare from './pages/Compare'
 import FactionDetail from './pages/FactionDetail'
 import Factions from './pages/Factions'
@@ -25,6 +26,7 @@ function App() {
           <Route path="/army-planner" element={<ArmyPlanner />} />
         </Routes>
       </main>
+      <Toast />
     </>
   )
 }
