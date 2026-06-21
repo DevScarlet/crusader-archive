@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getFactions } from '../api/openHammerApi'
-import ConfirmationDialog from '../components/ConfirmationDialog'
 import {
   type ArmyPlannerUnit,
   type ArmyList,
@@ -20,6 +19,16 @@ function getDisplayName(list: ArmyList): string {
 interface ArmyListNameFieldProps {
   activeList: ArmyList
   onSaveName: (name: string) => boolean
+}
+
+type DestructiveConfirmation =
+  | { type: 'clear-list' }
+  | { type: 'delete-list' }
+  | { type: 'remove-unit'; unit: ArmyPlannerUnit }
+  | null
+
+function getUnitKey(unit: ArmyPlannerUnit): string {
+  return unit.id ?? `${unit.faction}:${unit.name}`
 }
 
 function ArmyListNameField({
@@ -58,9 +67,8 @@ function ArmyListNameField({
 function ArmyPlanner() {
   const [factions, setFactions] = useState<Faction[]>([])
   const [factionsError, setFactionsError] = useState<string | null>(null)
-  const [isConfirmingClear, setIsConfirmingClear] = useState(false)
-  const [deleteListId, setDeleteListId] = useState<string | null>(null)
-  const [unitToRemove, setUnitToRemove] = useState<ArmyPlannerUnit | null>(null)
+  const [destructiveConfirmation, setDestructiveConfirmation] =
+    useState<DestructiveConfirmation>(null)
   const {
     activeList,
     lists,
@@ -108,6 +116,18 @@ function ArmyPlanner() {
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setDestructiveConfirmation(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   function handleFactionChange(factionName: string) {
     const selectedFaction = factions.find(
       (faction) => faction.name === factionName,
@@ -118,25 +138,24 @@ function ArmyPlanner() {
 
   function handleClearList() {
     clearList()
-    setIsConfirmingClear(false)
+    setDestructiveConfirmation(null)
   }
 
   function handleDeleteList() {
-    if (!deleteListId) {
-      return
-    }
-
-    deleteList(deleteListId)
-    setDeleteListId(null)
+    deleteList(activeList.id)
+    setDestructiveConfirmation(null)
   }
 
-  function handleRemoveUnit() {
-    if (!unitToRemove) {
+  function handleRemoveUnit(unit: ArmyPlannerUnit) {
+    if (
+      destructiveConfirmation?.type !== 'remove-unit' ||
+      getUnitKey(destructiveConfirmation.unit) !== getUnitKey(unit)
+    ) {
       return
     }
 
-    removeUnit(unitToRemove)
-    setUnitToRemove(null)
+    removeUnit(unit)
+    setDestructiveConfirmation(null)
   }
 
   return (
@@ -164,9 +183,7 @@ function ArmyPlanner() {
             value={activeList.id}
             onChange={(event) => {
               setActiveListId(event.target.value)
-              setDeleteListId(null)
-              setIsConfirmingClear(false)
-              setUnitToRemove(null)
+              setDestructiveConfirmation(null)
             }}
           >
             {lists.map((list) => (
@@ -177,17 +194,45 @@ function ArmyPlanner() {
           </select>
         </div>
 
-        <button type="button" onClick={createList}>
+        <button
+          type="button"
+          onClick={() => {
+            setDestructiveConfirmation(null)
+            createList()
+          }}
+        >
           + New list
         </button>
 
-        <button
-          type="button"
-          className="button-danger"
-          onClick={() => setDeleteListId(activeList.id)}
-        >
-          Delete list
-        </button>
+        <div className="toolbar-confirmation-slot">
+          {destructiveConfirmation?.type === 'delete-list' ? (
+            <div className="inline-confirmation">
+              <span>Delete this list?</span>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => setDestructiveConfirmation(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button-danger"
+                onClick={handleDeleteList}
+              >
+                Delete list
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="button-danger"
+              onClick={() => setDestructiveConfirmation({ type: 'delete-list' })}
+            >
+              Delete list
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="army-list-details-card">
@@ -236,13 +281,13 @@ function ArmyPlanner() {
 
           {activeList.units.length > 0 && (
             <div className="clear-list-actions">
-              {isConfirmingClear ? (
-                <>
+              {destructiveConfirmation?.type === 'clear-list' ? (
+                <div className="inline-confirmation">
                   <span>Clear this list?</span>
                   <button
                     type="button"
                     className="button-secondary"
-                    onClick={() => setIsConfirmingClear(false)}
+                    onClick={() => setDestructiveConfirmation(null)}
                   >
                     Cancel
                   </button>
@@ -253,12 +298,14 @@ function ArmyPlanner() {
                   >
                     Yes, clear it
                   </button>
-                </>
+                </div>
               ) : (
                 <button
                   type="button"
                   className="button-danger"
-                  onClick={() => setIsConfirmingClear(true)}
+                  onClick={() =>
+                    setDestructiveConfirmation({ type: 'clear-list' })
+                  }
                 >
                   Clear list
                 </button>
@@ -311,7 +358,10 @@ function ArmyPlanner() {
                           type="button"
                           onClick={() => {
                             if (unit.quantity <= 1) {
-                              setUnitToRemove(unit)
+                              setDestructiveConfirmation({
+                                type: 'remove-unit',
+                                unit,
+                              })
                               return
                             }
 
@@ -334,13 +384,40 @@ function ArmyPlanner() {
                     <td>{unit.points ?? 0}</td>
                     <td>{getSubtotal(unit)}</td>
                     <td>
-                      <button
-                        type="button"
-                        className="button-danger"
-                        onClick={() => setUnitToRemove(unit)}
-                      >
-                        Remove
-                      </button>
+                      {destructiveConfirmation?.type === 'remove-unit' &&
+                      getUnitKey(destructiveConfirmation.unit) ===
+                        getUnitKey(unit) ? (
+                        <div className="inline-confirmation inline-confirmation--table">
+                          <span>Remove {unit.name}?</span>
+                          <button
+                            type="button"
+                            className="button-secondary"
+                            onClick={() => setDestructiveConfirmation(null)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="button-danger"
+                            onClick={() => handleRemoveUnit(unit)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="button-danger"
+                          onClick={() =>
+                            setDestructiveConfirmation({
+                              type: 'remove-unit',
+                              unit,
+                            })
+                          }
+                        >
+                          Remove
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -349,33 +426,6 @@ function ArmyPlanner() {
           </div>
         )}
       </div>
-
-      {deleteListId === activeList.id && (
-        <ConfirmationDialog
-          title="Delete army list?"
-          confirmLabel="Delete list"
-          confirmClassName="button-danger"
-          onCancel={() => setDeleteListId(null)}
-          onConfirm={handleDeleteList}
-        >
-          <p>
-            Delete {getDisplayName(activeList)}? This removes only this army
-            list.
-          </p>
-        </ConfirmationDialog>
-      )}
-
-      {unitToRemove && (
-        <ConfirmationDialog
-          title="Remove unit?"
-          confirmLabel="Remove"
-          confirmClassName="button-danger"
-          onCancel={() => setUnitToRemove(null)}
-          onConfirm={handleRemoveUnit}
-        >
-          <p>Remove {unitToRemove.name} from this army list?</p>
-        </ConfirmationDialog>
-      )}
     </section>
   )
 }

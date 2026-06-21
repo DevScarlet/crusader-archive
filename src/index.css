@@ -693,6 +693,12 @@ a:focus-visible {
   flex: 1 1 16rem;
 }
 
+.toolbar-confirmation-slot {
+  display: flex;
+  justify-content: flex-end;
+  min-width: min(100%, 22rem);
+}
+
 .field-error {
   margin: 0.5rem 0 0;
   color: #a22b2b;
@@ -747,6 +753,29 @@ a:focus-visible {
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.inline-confirmation {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #f7f7f5;
+}
+
+.inline-confirmation span {
+  font-weight: 700;
+}
+
+.inline-confirmation button {
+  padding: 0.375rem 0.625rem;
+}
+
+.inline-confirmation--table {
+  max-width: 16rem;
 }
 
 .empty-army-list > div {
@@ -1155,9 +1184,19 @@ a:focus-visible {
   }
 
   .army-planner-toolbar > button,
+  .toolbar-confirmation-slot,
   .unit-card-actions button,
   .toast__actions a,
   .toast__actions button {
+    width: 100%;
+  }
+
+  .toolbar-confirmation-slot {
+    justify-content: stretch;
+    min-width: 0;
+  }
+
+  .inline-confirmation {
     width: 100%;
   }
 

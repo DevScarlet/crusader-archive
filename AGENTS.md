@@ -119,22 +119,38 @@ Before work is considered complete:
 * User-facing loading, empty, and error states should be handled where relevant.
 
 
-## Response format
+## Completion response format
 
-After completing a task, respond using exactly these sections:
+After completing a task, your final response is valid only if it uses exactly these three headings, in this exact order:
 
 ### What I changed
-- Briefly explain the important behavior, UI, and code changes.
-- Use concise bullets.
-- Mention all files.
+
+* List the completed behavior, UI, and code changes.
+* Use concise bullets.
+* Mention every changed file and what changed in it.
+* Do not include verification results in this section.
 
 ### Verification
-- List checks that were run, such as lint, build, tests, or manual verification.
-- Be honest about anything not verified.
+
+* List checks that were actually run, such as lint, build, tests, or manual verification.
+* Clearly state anything that was not verified.
+* Do not include code-change summaries in this section.
 
 ### Commit summary
-- Provide multiple concise bullet points summarizing the changes made (as many as needed).
-- Write these as completed changes, suitable for a Git commit description.
 
-Rules:
-- Keep the response practical and easy to review.
+* Restate the completed work as short bullet points suitable for a Git commit description.
+* Use bullets.
+* Each bullet must begin with a completed action, such as:
+    * Added ...
+    * Updated ...
+    * Removed ...
+    * Fixed ...
+    * Standardized ...
+* These bullets should be shorter versions of “What I changed.”
+
+Strict rules:
+* Never provide a single-line commit message.
+* Never replace `Commit summary` with another heading.
+* Never place verification results inside `What I changed`.
+* Do not omit any of the three required sections.
+* Keep the response practical and easy to review.
