@@ -121,26 +121,20 @@ Before work is considered complete:
 
 ## Response format
 
-After completing a task, always end your response with these sections:
+After completing a task, respond using exactly these sections:
 
 ### What I changed
+- Briefly explain the important behavior, UI, and code changes.
+- Use concise bullets.
+- Mention all files.
 
-* Briefly list the important files changed and what changed in each (each file change).
-* Mention any important behavior, UI, or logic changes.
-* Mention tests or checks run, and whether they passed.
+### Verification
+- List checks that were run, such as lint, build, tests, or manual verification.
+- Be honest about anything not verified.
 
-### Commit message
+### Commit summary
+- Provide multiple concise bullet points summarizing the changes made (as many as needed).
+- Write these as completed changes, suitable for a Git commit description.
 
-Provide a clear commit message (in bullet point form) in imperative style that summarizes the completed work.
-
-Format exactly:
-
-### What I changed
-
-* ...
-* ...
-
-### Commit message
-
-- ...
-- ...
+Rules:
+- Keep the response practical and easy to review.

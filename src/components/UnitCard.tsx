@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { glossary } from '../data/glossary'
-import { useArmyPlanner } from '../hooks/useArmyPlanner'
 import type { Unit, UnitStats } from '../types/unit'
+import AddToArmyButton from './AddToArmyButton'
 import FavoriteButton from './FavoriteButton'
 import HelpTooltip from './HelpTooltip'
 
@@ -33,9 +33,7 @@ function UnitCard({
   canCompareMore = true,
   onToggleCompare,
 }: UnitCardProps) {
-  const { addUnit, getUnitQuantity } = useArmyPlanner()
   const unitIdentifier = unit.id ?? unit.name
-  const armyQuantity = getUnitQuantity(unit)
   const availableStats = statLabels.filter(
     ([statName]) => unit.stats?.[statName] !== undefined,
   )
@@ -88,15 +86,7 @@ function UnitCard({
         )}
 
         <div className="unit-card-actions">
-          <button
-            type="button"
-            className="army-planner-add-button"
-            onClick={() => addUnit(unit)}
-          >
-            {armyQuantity > 0
-              ? `Add another (added x${armyQuantity})`
-              : 'Add to army'}
-          </button>
+          <AddToArmyButton unit={unit} />
 
           {onToggleCompare && (
             <button

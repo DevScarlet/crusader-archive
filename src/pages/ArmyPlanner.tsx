@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getFactions } from '../api/openHammerApi'
+import ConfirmationDialog from '../components/ConfirmationDialog'
 import {
   type ArmyPlannerUnit,
   type ArmyList,
@@ -59,6 +60,7 @@ function ArmyPlanner() {
   const [factionsError, setFactionsError] = useState<string | null>(null)
   const [isConfirmingClear, setIsConfirmingClear] = useState(false)
   const [deleteListId, setDeleteListId] = useState<string | null>(null)
+  const [unitToRemove, setUnitToRemove] = useState<ArmyPlannerUnit | null>(null)
   const {
     activeList,
     lists,
@@ -73,6 +75,13 @@ function ArmyPlanner() {
     removeUnit,
     clearList,
   } = useArmyPlanner()
+  const sortedFactions = useMemo(
+    () =>
+      [...factions].sort((firstFaction, secondFaction) =>
+        firstFaction.name.localeCompare(secondFaction.name),
+      ),
+    [factions],
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -121,6 +130,15 @@ function ArmyPlanner() {
     setDeleteListId(null)
   }
 
+  function handleRemoveUnit() {
+    if (!unitToRemove) {
+      return
+    }
+
+    removeUnit(unitToRemove)
+    setUnitToRemove(null)
+  }
+
   return (
     <section aria-labelledby="army-planner-heading">
       <h1 id="army-planner-heading">Army Planner</h1>
@@ -148,6 +166,7 @@ function ArmyPlanner() {
               setActiveListId(event.target.value)
               setDeleteListId(null)
               setIsConfirmingClear(false)
+              setUnitToRemove(null)
             }}
           >
             {lists.map((list) => (
@@ -162,33 +181,13 @@ function ArmyPlanner() {
           + New list
         </button>
 
-        {deleteListId === activeList.id ? (
-          <div className="delete-list-confirmation">
-            <span>Delete this list?</span>
-            <button
-              type="button"
-              className="button-secondary"
-              onClick={() => setDeleteListId(null)}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="button-danger"
-              onClick={handleDeleteList}
-            >
-              Delete list
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="button-danger"
-            onClick={() => setDeleteListId(activeList.id)}
-          >
-            Delete list
-          </button>
-        )}
+        <button
+          type="button"
+          className="button-danger"
+          onClick={() => setDeleteListId(activeList.id)}
+        >
+          Delete list
+        </button>
       </div>
 
       <div className="army-list-details-card">
@@ -207,7 +206,7 @@ function ArmyPlanner() {
               onChange={(event) => handleFactionChange(event.target.value)}
             >
               <option value="">Choose a faction</option>
-              {factions.map((faction) => (
+              {sortedFactions.map((faction) => (
                 <option key={faction.name} value={faction.name}>
                   {faction.name}
                 </option>
@@ -310,10 +309,14 @@ function ArmyPlanner() {
                       <div className="quantity-controls">
                         <button
                           type="button"
-                          disabled={unit.quantity <= 1}
-                          onClick={() =>
+                          onClick={() => {
+                            if (unit.quantity <= 1) {
+                              setUnitToRemove(unit)
+                              return
+                            }
+
                             updateQuantity(unit, unit.quantity - 1)
-                          }
+                          }}
                         >
                           -
                         </button>
@@ -334,7 +337,7 @@ function ArmyPlanner() {
                       <button
                         type="button"
                         className="button-danger"
-                        onClick={() => removeUnit(unit)}
+                        onClick={() => setUnitToRemove(unit)}
                       >
                         Remove
                       </button>
@@ -346,6 +349,33 @@ function ArmyPlanner() {
           </div>
         )}
       </div>
+
+      {deleteListId === activeList.id && (
+        <ConfirmationDialog
+          title="Delete army list?"
+          confirmLabel="Delete list"
+          confirmClassName="button-danger"
+          onCancel={() => setDeleteListId(null)}
+          onConfirm={handleDeleteList}
+        >
+          <p>
+            Delete {getDisplayName(activeList)}? This removes only this army
+            list.
+          </p>
+        </ConfirmationDialog>
+      )}
+
+      {unitToRemove && (
+        <ConfirmationDialog
+          title="Remove unit?"
+          confirmLabel="Remove"
+          confirmClassName="button-danger"
+          onCancel={() => setUnitToRemove(null)}
+          onConfirm={handleRemoveUnit}
+        >
+          <p>Remove {unitToRemove.name} from this army list?</p>
+        </ConfirmationDialog>
+      )}
     </section>
   )
 }

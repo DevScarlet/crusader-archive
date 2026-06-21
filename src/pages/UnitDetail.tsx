@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getUnit } from '../api/openHammerApi'
+import AddToArmyButton from '../components/AddToArmyButton'
 import FavoriteButton from '../components/FavoriteButton'
 import HelpTooltip from '../components/HelpTooltip'
 import { glossary } from '../data/glossary'
-import { useArmyPlanner } from '../hooks/useArmyPlanner'
 import { useFavorites } from '../hooks/useFavorites'
 import type { Unit, UnitStats, UnitWeapon } from '../types/unit'
 
@@ -121,10 +121,6 @@ function UnitDetail() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [requestNumber, setRequestNumber] = useState(0)
   const { isFavorite, toggleFavorite } = useFavorites()
-  const {
-    addUnit,
-    getUnitQuantity,
-  } = useArmyPlanner()
 
   let unitIdentifier: string | null = null
 
@@ -181,7 +177,6 @@ function UnitDetail() {
   const availableStats = statLabels.filter(
     ([statName]) => unit?.stats?.[statName] !== undefined,
   )
-  const armyQuantity = unit ? getUnitQuantity(unit) : 0
 
   return (
     <section aria-labelledby="unit-heading">
@@ -260,15 +255,7 @@ function UnitDetail() {
             </p>
           )}
 
-          <button
-            type="button"
-            className="army-planner-add-button"
-            onClick={() => addUnit(unit)}
-          >
-            {armyQuantity > 0
-              ? `Add another (added x${armyQuantity})`
-              : 'Add to army'}
-          </button>
+          <AddToArmyButton unit={unit} />
 
           {availableStats.length > 0 && (
             <dl className="unit-stats unit-detail__stats">

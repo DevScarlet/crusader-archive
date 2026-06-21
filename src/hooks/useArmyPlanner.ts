@@ -47,6 +47,7 @@ interface UseArmyPlannerResult {
   updateListName: (name: string) => boolean
   updateListFaction: (faction?: Faction) => void
   addUnit: (unit: Unit) => void
+  addUnitToList: (listId: string, unit: Unit) => boolean
   getUnitQuantity: (unit: Unit) => number
   updateQuantity: (unit: ArmyPlannerUnit, quantity: number) => void
   removeUnit: (unit: ArmyPlannerUnit) => void
@@ -304,7 +305,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
       (list) => list.id === plannerState.activeArmyListId,
     ) ?? plannerState.armyLists[0]
 
-  function saveActiveList(updatedList: ArmyList): void {
+  function saveList(updatedList: ArmyList, activeArmyListId: string): void {
     const currentState = readPlannerState()
     const updatedLists = currentState.armyLists.map((list) =>
       list.id === updatedList.id ? updatedList : list,
@@ -313,8 +314,12 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     savePlannerState({
       ...currentState,
       armyLists: updatedLists,
-      activeArmyListId: updatedList.id,
+      activeArmyListId,
     })
+  }
+
+  function saveActiveList(updatedList: ArmyList): void {
+    saveList(updatedList, updatedList.id)
   }
 
   function setActiveListId(listId: string): void {
@@ -384,8 +389,20 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     })
   }
 
-  function addUnit(unit: Unit): void {
-    const listFaction = activeList.faction ?? activeList.units[0]?.faction
+  function addUnitToList(listId: string, unit: Unit): boolean {
+    const currentState = readPlannerState()
+    const targetList = currentState.armyLists.find((list) => list.id === listId)
+
+    if (!targetList) {
+      showToast({
+        message: 'That army list could not be found.',
+        actionLabel: 'View army',
+        actionTo: '/army-planner',
+      })
+      return false
+    }
+
+    const listFaction = targetList.faction ?? targetList.units[0]?.faction
 
     if (listFaction && listFaction !== unit.faction) {
       showToast({
@@ -393,34 +410,43 @@ export function useArmyPlanner(): UseArmyPlannerResult {
         actionLabel: 'View army',
         actionTo: '/army-planner',
       })
-      return
+      return false
     }
 
     const newUnit = toArmyPlannerUnit(unit)
     const unitKey = getUnitKey(newUnit)
-    const existingUnit = activeList.units.find(
+    const existingUnit = targetList.units.find(
       (armyUnit) => getUnitKey(armyUnit) === unitKey,
     )
     const updatedUnits = existingUnit
-      ? activeList.units.map((armyUnit) =>
+      ? targetList.units.map((armyUnit) =>
           getUnitKey(armyUnit) === unitKey
             ? { ...armyUnit, quantity: armyUnit.quantity + 1 }
             : armyUnit,
         )
-      : [...activeList.units, newUnit]
+      : [...targetList.units, newUnit]
     const updatedQuantity = existingUnit ? existingUnit.quantity + 1 : 1
 
-    saveActiveList({
-      ...activeList,
-      faction: activeList.faction ?? listFaction ?? unit.faction,
-      factionType: activeList.factionType ?? unit.factionType,
-      units: updatedUnits,
-    })
+    saveList(
+      {
+        ...targetList,
+        faction: targetList.faction ?? listFaction ?? unit.faction,
+        factionType: targetList.factionType ?? unit.factionType,
+        units: updatedUnits,
+      },
+      currentState.activeArmyListId,
+    )
     showToast({
-      message: `${unit.name} added to ${getDisplayListName(activeList)} (x${updatedQuantity}).`,
+      message: `${unit.name} added to ${getDisplayListName(targetList)} (x${updatedQuantity}).`,
       actionLabel: 'View army',
       actionTo: '/army-planner',
     })
+
+    return true
+  }
+
+  function addUnit(unit: Unit): void {
+    addUnitToList(activeList.id, unit)
   }
 
   function getUnitQuantity(unit: Unit): number {
@@ -480,6 +506,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     updateListName,
     updateListFaction,
     addUnit,
+    addUnitToList,
     getUnitQuantity,
     updateQuantity,
     removeUnit,
