@@ -138,18 +138,7 @@ function ArmyPlanner() {
         </p>
       )}
 
-      <div className="army-planner-summary">
-        <div>
-          <p className="summary-label">Total points</p>
-          <p className="summary-value">{totalPoints}</p>
-        </div>
-        <div>
-          <p className="summary-label">Selected units</p>
-          <p className="summary-value">{totalUnits}</p>
-        </div>
-      </div>
-
-      <div className="army-list-selector-row">
+      <div className="army-planner-toolbar">
         <div className="form-field">
           <label htmlFor="active-army-list">Active army list</label>
           <select
@@ -176,150 +165,187 @@ function ArmyPlanner() {
         {deleteListId === activeList.id ? (
           <div className="delete-list-confirmation">
             <span>Delete this list?</span>
-            <button type="button" onClick={handleDeleteList}>
-              Yes, delete it
-            </button>
-            <button type="button" onClick={() => setDeleteListId(null)}>
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => setDeleteListId(null)}
+            >
               Cancel
+            </button>
+            <button
+              type="button"
+              className="button-danger"
+              onClick={handleDeleteList}
+            >
+              Delete list
             </button>
           </div>
         ) : (
-          <button type="button" onClick={() => setDeleteListId(activeList.id)}>
+          <button
+            type="button"
+            className="button-danger"
+            onClick={() => setDeleteListId(activeList.id)}
+          >
             Delete list
           </button>
         )}
       </div>
 
-      <div className="army-list-settings">
-        <ArmyListNameField
-          key={activeList.id}
-          activeList={activeList}
-          onSaveName={updateListName}
-        />
+      <div className="army-list-details-card">
+        <div className="army-list-settings">
+          <ArmyListNameField
+            key={activeList.id}
+            activeList={activeList}
+            onSaveName={updateListName}
+          />
 
-        <div className="form-field">
-          <label htmlFor="army-list-faction">Faction</label>
-          <select
-            id="army-list-faction"
-            value={activeList.faction ?? ''}
-            onChange={(event) => handleFactionChange(event.target.value)}
-          >
-            <option value="">Choose a faction</option>
-            {factions.map((faction) => (
-              <option key={faction.name} value={faction.name}>
-                {faction.name}
-              </option>
-            ))}
-          </select>
+          <div className="form-field">
+            <label htmlFor="army-list-faction">Faction</label>
+            <select
+              id="army-list-faction"
+              value={activeList.faction ?? ''}
+              onChange={(event) => handleFactionChange(event.target.value)}
+            >
+              <option value="">Choose a faction</option>
+              {factions.map((faction) => (
+                <option key={faction.name} value={faction.name}>
+                  {faction.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="army-planner-summary">
+          <div>
+            <p className="summary-label">Total points</p>
+            <p className="summary-value">{totalPoints}</p>
+          </div>
+          <div>
+            <p className="summary-label">Selected units</p>
+            <p className="summary-value">{totalUnits}</p>
+          </div>
         </div>
       </div>
 
-      <div className="army-list-heading-row">
-        <div>
-          <h2>{getDisplayName(activeList)}</h2>
-          <p>{activeList.faction ?? 'No faction selected yet'}</p>
-        </div>
+      <div className="army-roster-card">
+        <div className="army-list-heading-row">
+          <div>
+            <h2>{getDisplayName(activeList)}</h2>
+            <p>{activeList.faction ?? 'No faction selected yet'}</p>
+          </div>
 
-        {activeList.units.length > 0 && (
-          <div className="clear-list-actions">
-            {isConfirmingClear ? (
-              <>
-                <span>Clear this list?</span>
-                <button type="button" onClick={handleClearList}>
-                  Yes, clear it
-                </button>
+          {activeList.units.length > 0 && (
+            <div className="clear-list-actions">
+              {isConfirmingClear ? (
+                <>
+                  <span>Clear this list?</span>
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    onClick={() => setIsConfirmingClear(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="button-danger"
+                    onClick={handleClearList}
+                  >
+                    Yes, clear it
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => setIsConfirmingClear(false)}
+                  className="button-danger"
+                  onClick={() => setIsConfirmingClear(true)}
                 >
-                  Cancel
+                  Clear list
                 </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsConfirmingClear(true)}
-              >
-                Clear list
-              </button>
-            )}
+              )}
+            </div>
+          )}
+        </div>
+
+        {activeList.units.length === 0 ? (
+          <div className="empty-army-list status-message">
+            <p>
+              This army list is empty. Browse units to add something to the
+              roster, or browse factions if you want to pick a theme first.
+            </p>
+            <div>
+              <Link className="button-link button-link--primary" to="/units">
+                Browse units
+              </Link>
+              <Link className="text-link" to="/factions">
+                Browse factions
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="army-list-table-wrapper">
+            <table className="army-list-table">
+              <thead>
+                <tr>
+                  <th scope="col">Unit</th>
+                  <th scope="col">Quantity</th>
+                  <th scope="col">Points</th>
+                  <th scope="col">Subtotal</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeList.units.map((unit) => (
+                  <tr key={unit.id ?? `${unit.faction}-${unit.name}`}>
+                    <th scope="row">
+                      <Link
+                        to={`/units/${encodeURIComponent(unit.routeIdentifier)}`}
+                      >
+                        {unit.name}
+                      </Link>
+                      <span>{unit.faction}</span>
+                    </th>
+                    <td>
+                      <div className="quantity-controls">
+                        <button
+                          type="button"
+                          disabled={unit.quantity <= 1}
+                          onClick={() =>
+                            updateQuantity(unit, unit.quantity - 1)
+                          }
+                        >
+                          -
+                        </button>
+                        <span>{unit.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(unit, unit.quantity + 1)
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+                    </td>
+                    <td>{unit.points ?? 0}</td>
+                    <td>{getSubtotal(unit)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="button-danger"
+                        onClick={() => removeUnit(unit)}
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
-
-      {activeList.units.length === 0 ? (
-        <div className="empty-army-list status-message">
-          <p>
-            This army list is empty. Browse units to add something to the
-            roster, or browse factions if you want to pick a theme first.
-          </p>
-          <div>
-            <Link className="button-link button-link--primary" to="/units">
-              Browse units
-            </Link>
-            <Link className="text-link" to="/factions">
-              Browse factions
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <div className="army-list-table-wrapper">
-          <table className="army-list-table">
-            <thead>
-              <tr>
-                <th scope="col">Unit</th>
-                <th scope="col">Quantity</th>
-                <th scope="col">Points</th>
-                <th scope="col">Subtotal</th>
-                <th scope="col">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeList.units.map((unit) => (
-                <tr key={unit.id ?? `${unit.faction}-${unit.name}`}>
-                  <th scope="row">
-                    <Link
-                      to={`/units/${encodeURIComponent(unit.routeIdentifier)}`}
-                    >
-                      {unit.name}
-                    </Link>
-                    <span>{unit.faction}</span>
-                  </th>
-                  <td>
-                    <div className="quantity-controls">
-                      <button
-                        type="button"
-                        disabled={unit.quantity <= 1}
-                        onClick={() =>
-                          updateQuantity(unit, unit.quantity - 1)
-                        }
-                      >
-                        -
-                      </button>
-                      <span>{unit.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateQuantity(unit, unit.quantity + 1)
-                        }
-                      >
-                        +
-                      </button>
-                    </div>
-                  </td>
-                  <td>{unit.points ?? 0}</td>
-                  <td>{getSubtotal(unit)}</td>
-                  <td>
-                    <button type="button" onClick={() => removeUnit(unit)}>
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </section>
   )
 }

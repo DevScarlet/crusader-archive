@@ -103,6 +103,25 @@ button:hover {
   background: #444444;
 }
 
+.button-secondary {
+  border: 1px solid #242424;
+  color: #242424;
+  background: #ffffff;
+}
+
+.button-secondary:hover {
+  color: #ffffff;
+  background: #444444;
+}
+
+.button-danger {
+  background: #7d2f2f;
+}
+
+.button-danger:hover {
+  background: #9a3939;
+}
+
 button:focus-visible,
 a:focus-visible {
   outline: 0.1875rem solid #846c24;
@@ -636,16 +655,14 @@ a:focus-visible {
   display: grid;
   grid-template-columns: repeat(2, minmax(10rem, 1fr));
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
-.army-planner-summary > div,
-.army-list-settings,
-.army-list-heading-row {
+.army-planner-summary > div {
   padding: 1rem;
   border: 1px solid #ddddda;
   border-radius: 0.5rem;
-  background: #ffffff;
+  background: #f7f7f5;
 }
 
 .summary-label {
@@ -660,15 +677,19 @@ a:focus-visible {
   font-weight: 700;
 }
 
-.army-list-selector-row {
+.army-planner-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.75rem;
   margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
 }
 
-.army-list-selector-row .form-field {
+.army-planner-toolbar .form-field {
   flex: 1 1 16rem;
 }
 
@@ -694,7 +715,23 @@ a:focus-visible {
   display: grid;
   grid-template-columns: minmax(12rem, 2fr) minmax(12rem, 1fr);
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.army-list-details-card,
+.army-roster-card {
+  padding: 1rem;
+  border: 1px solid #ddddda;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.army-list-details-card {
+  margin-bottom: 1rem;
+}
+
+.army-roster-card {
+  margin-top: 1.5rem;
 }
 
 .army-list-heading-row {
@@ -1042,13 +1079,13 @@ a:focus-visible {
     display: grid;
   }
 
-  .army-list-selector-row,
+  .army-planner-toolbar,
   .unit-card-actions,
   .toast__actions {
     align-items: stretch;
   }
 
-  .army-list-selector-row > button,
+  .army-planner-toolbar > button,
   .delete-list-confirmation,
   .unit-card-actions button,
   .toast__actions a,

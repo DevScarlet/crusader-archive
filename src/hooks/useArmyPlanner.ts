@@ -32,8 +32,8 @@ export interface ArmyPlannerToast {
 }
 
 interface ArmyPlannerState {
-  activeListId: string
-  lists: ArmyList[]
+  activeArmyListId: string
+  armyLists: ArmyList[]
 }
 
 interface UseArmyPlannerResult {
@@ -59,11 +59,27 @@ function createListId(): string {
 
 function createDefaultList(): ArmyList {
   return {
-    id: 'default-army-list',
+    id: createListId(),
     name: 'My Army List',
     units: [],
     createdAt: new Date().toISOString(),
   }
+}
+
+function getNextNewListName(lists: ArmyList[]): string {
+  const existingNames = new Set(lists.map((list) => list.name.trim()))
+
+  if (!existingNames.has('New army list')) {
+    return 'New army list'
+  }
+
+  let listNumber = 2
+
+  while (existingNames.has(`New army list ${listNumber}`)) {
+    listNumber += 1
+  }
+
+  return `New army list ${listNumber}`
 }
 
 function getUnitKey(
@@ -137,22 +153,24 @@ function parseArmyList(value: unknown, fallbackId: string): ArmyList | null {
 }
 
 function normalizeState(state: ArmyPlannerState): ArmyPlannerState {
-  if (state.lists.length === 0) {
+  if (state.armyLists.length === 0) {
     const defaultList = createDefaultList()
 
     return {
-      activeListId: defaultList.id,
-      lists: [defaultList],
+      activeArmyListId: defaultList.id,
+      armyLists: [defaultList],
     }
   }
 
-  const activeListExists = state.lists.some(
-    (list) => list.id === state.activeListId,
+  const activeListExists = state.armyLists.some(
+    (list) => list.id === state.activeArmyListId,
   )
 
   return {
-    activeListId: activeListExists ? state.activeListId : state.lists[0].id,
-    lists: state.lists,
+    activeArmyListId: activeListExists
+      ? state.activeArmyListId
+      : state.armyLists[0].id,
+    armyLists: state.armyLists,
   }
 }
 
@@ -164,8 +182,8 @@ function readPlannerState(): ArmyPlannerState {
       const defaultList = createDefaultList()
 
       return {
-        activeListId: defaultList.id,
-        lists: [defaultList],
+        activeArmyListId: defaultList.id,
+        armyLists: [defaultList],
       }
     }
 
@@ -174,19 +192,38 @@ function readPlannerState(): ArmyPlannerState {
     if (
       typeof parsedState === 'object' &&
       parsedState !== null &&
-      Array.isArray((parsedState as Record<string, unknown>).lists)
+      Array.isArray((parsedState as Record<string, unknown>).armyLists)
     ) {
       const plannerState = parsedState as Record<string, unknown>
-      const lists = (plannerState.lists as unknown[])
+      const armyLists = (plannerState.armyLists as unknown[])
         .map((list, index) => parseArmyList(list, `army-list-${index}`))
         .filter((list): list is ArmyList => list !== null)
 
       return normalizeState({
-        activeListId:
+        activeArmyListId:
+          getOptionalString(plannerState.activeArmyListId) ??
+          armyLists[0]?.id ??
+          createListId(),
+        armyLists,
+      })
+    }
+
+    if (
+      typeof parsedState === 'object' &&
+      parsedState !== null &&
+      Array.isArray((parsedState as Record<string, unknown>).lists)
+    ) {
+      const plannerState = parsedState as Record<string, unknown>
+      const armyLists = (plannerState.lists as unknown[])
+        .map((list, index) => parseArmyList(list, `army-list-${index}`))
+        .filter((list): list is ArmyList => list !== null)
+
+      return normalizeState({
+        activeArmyListId:
           getOptionalString(plannerState.activeListId) ??
-          lists[0]?.id ??
-          'default-army-list',
-        lists,
+          armyLists[0]?.id ??
+          createListId(),
+        armyLists,
       })
     }
 
@@ -194,8 +231,8 @@ function readPlannerState(): ArmyPlannerState {
 
     if (migratedList) {
       return {
-        activeListId: migratedList.id,
-        lists: [migratedList],
+        activeArmyListId: migratedList.id,
+        armyLists: [migratedList],
       }
     }
   } catch {
@@ -205,8 +242,8 @@ function readPlannerState(): ArmyPlannerState {
   const defaultList = createDefaultList()
 
   return {
-    activeListId: defaultList.id,
-    lists: [defaultList],
+    activeArmyListId: defaultList.id,
+    armyLists: [defaultList],
   }
 }
 
@@ -263,32 +300,33 @@ export function useArmyPlanner(): UseArmyPlannerResult {
   }, [])
 
   const activeList =
-    plannerState.lists.find((list) => list.id === plannerState.activeListId) ??
-    plannerState.lists[0]
+    plannerState.armyLists.find(
+      (list) => list.id === plannerState.activeArmyListId,
+    ) ?? plannerState.armyLists[0]
 
   function saveActiveList(updatedList: ArmyList): void {
     const currentState = readPlannerState()
-    const updatedLists = currentState.lists.map((list) =>
+    const updatedLists = currentState.armyLists.map((list) =>
       list.id === updatedList.id ? updatedList : list,
     )
 
     savePlannerState({
       ...currentState,
-      lists: updatedLists,
-      activeListId: updatedList.id,
+      armyLists: updatedLists,
+      activeArmyListId: updatedList.id,
     })
   }
 
   function setActiveListId(listId: string): void {
     const currentState = readPlannerState()
 
-    if (!currentState.lists.some((list) => list.id === listId)) {
+    if (!currentState.armyLists.some((list) => list.id === listId)) {
       return
     }
 
     savePlannerState({
       ...currentState,
-      activeListId: listId,
+      activeArmyListId: listId,
     })
   }
 
@@ -296,25 +334,25 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     const currentState = readPlannerState()
     const newList: ArmyList = {
       id: createListId(),
-      name: 'New army list',
+      name: getNextNewListName(currentState.armyLists),
       units: [],
       createdAt: new Date().toISOString(),
     }
 
     savePlannerState({
-      activeListId: newList.id,
-      lists: [...currentState.lists, newList],
+      activeArmyListId: newList.id,
+      armyLists: [...currentState.armyLists, newList],
     })
   }
 
   function deleteList(listId: string): void {
     const currentState = readPlannerState()
-    const remainingLists = currentState.lists.filter(
+    const remainingLists = currentState.armyLists.filter(
       (list) => list.id !== listId,
     )
     const normalizedState = normalizeState({
-      activeListId: remainingLists[0]?.id ?? 'default-army-list',
-      lists: remainingLists,
+      activeArmyListId: remainingLists[0]?.id ?? createListId(),
+      armyLists: remainingLists,
     })
 
     savePlannerState(normalizedState)
@@ -379,7 +417,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
       units: updatedUnits,
     })
     showToast({
-      message: `${unit.name} added to ${getDisplayListName(activeList)} (×${updatedQuantity}).`,
+      message: `${unit.name} added to ${getDisplayListName(activeList)} (x${updatedQuantity}).`,
       actionLabel: 'View army',
       actionTo: '/army-planner',
     })
@@ -433,7 +471,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
 
   return {
     activeList,
-    lists: plannerState.lists,
+    lists: plannerState.armyLists,
     totalUnits,
     totalPoints,
     setActiveListId,

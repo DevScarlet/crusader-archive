@@ -266,7 +266,7 @@ function UnitDetail() {
             onClick={() => addUnit(unit)}
           >
             {armyQuantity > 0
-              ? `Add another (added ×${armyQuantity})`
+              ? `Add another (added x${armyQuantity})`
               : 'Add to army'}
           </button>
 
