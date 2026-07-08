@@ -17,6 +17,12 @@ body {
   margin: 0;
 }
 
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 a {
   color: inherit;
 }
@@ -59,9 +65,23 @@ a {
 }
 
 .page-container {
+  flex: 1 0 auto;
   width: min(100% - 2rem, 64rem);
   margin: 0 auto;
   padding: 3rem 0;
+}
+
+.app-footer {
+  width: min(100% - 2rem, 64rem);
+  margin: 0 auto;
+  padding: 0 0 1.5rem;
+  color: #666666;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.app-footer p {
+  margin: 0;
 }
 
 h1 {

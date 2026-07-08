@@ -1,3 +1,4 @@
+import { OPEN_HAMMER_API_EDITION } from '../config/appMetadata'
 import type { Faction } from '../types/faction'
 import type {
   Unit,
@@ -7,8 +8,7 @@ import type {
 } from '../types/unit'
 
 const API_BASE_URL = 'https://openhammer-api-production.up.railway.app'
-const API_EDITION = '10e'
-const API_ROOT_URL = `${API_BASE_URL}/v1/${API_EDITION}`
+const API_ROOT_URL = `${API_BASE_URL}/v1/${OPEN_HAMMER_API_EDITION}`
 
 interface OpenHammerFaction {
   name: string
