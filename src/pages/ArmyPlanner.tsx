@@ -23,9 +23,16 @@ function getDisplayName(list: ArmyList): string {
   return list.name.trim() || 'Untitled army list'
 }
 
+const targetPointPresets = [500, 1000, 1500, 2000, 3000]
+
 interface ArmyListNameFieldProps {
   activeList: ArmyList
   onSaveName: (name: string) => boolean
+}
+
+interface TargetPointsFieldProps {
+  targetPoints: number
+  onSaveTargetPoints: (targetPoints: number) => void
 }
 
 type DestructiveConfirmation =
@@ -79,6 +86,80 @@ function ArmyListNameField({
   )
 }
 
+function TargetPointsField({
+  targetPoints,
+  onSaveTargetPoints,
+}: TargetPointsFieldProps) {
+  const [draftTargetPoints, setDraftTargetPoints] = useState(
+    String(targetPoints),
+  )
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  function saveTargetPoints(value: string) {
+    const trimmedValue = value.trim()
+
+    if (!trimmedValue) {
+      setErrorMessage('Enter a target points value.')
+      return
+    }
+
+    const parsedTargetPoints = Number(trimmedValue)
+
+    if (
+      !/^\d+$/.test(trimmedValue) ||
+      !Number.isFinite(parsedTargetPoints) ||
+      parsedTargetPoints < 0
+    ) {
+      setErrorMessage('Target points must be a whole number of 0 or more.')
+      return
+    }
+
+    setErrorMessage(null)
+    onSaveTargetPoints(parsedTargetPoints)
+  }
+
+  function handlePresetClick(preset: number) {
+    setDraftTargetPoints(String(preset))
+    setErrorMessage(null)
+    onSaveTargetPoints(preset)
+  }
+
+  return (
+    <div className="form-field target-points-field">
+      <label htmlFor="army-list-target-points">Target points</label>
+      <input
+        id="army-list-target-points"
+        type="number"
+        min="0"
+        step="1"
+        value={draftTargetPoints}
+        onChange={(event) => {
+          setDraftTargetPoints(event.target.value)
+          saveTargetPoints(event.target.value)
+        }}
+        onBlur={() => saveTargetPoints(draftTargetPoints)}
+      />
+      <div className="target-points-presets" aria-label="Target point presets">
+        {targetPointPresets.map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            className="button-secondary"
+            onClick={() => handlePresetClick(preset)}
+          >
+            {preset}
+          </button>
+        ))}
+      </div>
+      {errorMessage && (
+        <p className="field-error" role="alert">
+          {errorMessage}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function ArmyPlanner() {
   const [factions, setFactions] = useState<Faction[]>([])
   const [factionsError, setFactionsError] = useState<string | null>(null)
@@ -97,6 +178,7 @@ function ArmyPlanner() {
     deleteList,
     updateListName,
     updateListFaction,
+    updateTargetPoints,
     updateQuantity,
     removeUnit,
     clearList,
@@ -108,6 +190,17 @@ function ArmyPlanner() {
         firstFaction.name.localeCompare(secondFaction.name),
       ),
     [factions],
+  )
+  const targetPoints = activeList.targetPoints
+  const budgetDifference = targetPoints - totalPoints
+  const isOverTarget = budgetDifference < 0
+  const budgetStatusText = isOverTarget
+    ? `${Math.abs(budgetDifference)} pts over`
+    : `${budgetDifference} pts remaining`
+  const progressTargetPoints = Math.max(targetPoints, 1)
+  const progressValue = Math.min(
+    100,
+    Math.round((totalPoints / progressTargetPoints) * 100),
   )
 
   useEffect(() => {
@@ -339,6 +432,12 @@ function ArmyPlanner() {
               ))}
             </select>
           </div>
+
+          <TargetPointsField
+            key={`${activeList.id}-target-points`}
+            targetPoints={targetPoints}
+            onSaveTargetPoints={updateTargetPoints}
+          />
         </div>
 
         <div className="army-planner-summary">
@@ -349,6 +448,37 @@ function ArmyPlanner() {
           <div>
             <p className="summary-label">Selected units</p>
             <p className="summary-value">{totalUnits}</p>
+          </div>
+          <div className="budget-summary">
+            <p className="summary-label">Budget</p>
+            <p
+              className={
+                isOverTarget
+                  ? 'budget-summary__text budget-summary__text--over'
+                  : 'budget-summary__text'
+              }
+            >
+              {totalPoints} / {targetPoints} pts
+              {' \u00b7 '}
+              {budgetStatusText}
+            </p>
+            <div
+              className={
+                isOverTarget
+                  ? 'budget-progress budget-progress--over'
+                  : 'budget-progress'
+              }
+              role="progressbar"
+              aria-label="Army list points progress"
+              aria-valuemin={0}
+              aria-valuemax={progressTargetPoints}
+              aria-valuenow={Math.min(totalPoints, progressTargetPoints)}
+            >
+              <div
+                className="budget-progress__bar"
+                style={{ width: `${progressValue}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>

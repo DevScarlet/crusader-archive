@@ -3,6 +3,7 @@ import type { ArmyList, ArmyPlannerUnit } from '../hooks/useArmyPlanner'
 
 const SHARE_CODE_PREFIX = 'CA10E-'
 const SHARE_CODE_SCHEMA_VERSION = 1
+export const DEFAULT_TARGET_POINTS = 1000
 const RULES_NOTE =
   'Note: Crusader Archive does not validate official army-list rules.'
 
@@ -25,6 +26,7 @@ interface ShareCodePayload {
     name: string
     faction?: string
     factionType?: string
+    targetPoints: number
     units: ShareCodeUnit[]
   }
 }
@@ -33,6 +35,7 @@ export interface ImportedArmyList {
   name: string
   faction?: string
   factionType?: string
+  targetPoints: number
   units: ArmyPlannerUnit[]
 }
 
@@ -51,6 +54,14 @@ function getTotalPoints(units: ArmyPlannerUnit[]): number {
 
 function getTotalUnits(units: ArmyPlannerUnit[]): number {
   return units.reduce((total, unit) => total + unit.quantity, 0)
+}
+
+function getBudgetLine(totalPoints: number, targetPoints: number): string {
+  if (totalPoints > targetPoints) {
+    return `Over: ${totalPoints - targetPoints} pts`
+  }
+
+  return `Remaining: ${targetPoints - totalPoints} pts`
 }
 
 function getListFactionLabel(list: Pick<ArmyList, 'faction'>): string {
@@ -91,6 +102,16 @@ function getOptionalNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value)
     ? value
     : undefined
+}
+
+function getTargetPoints(value: unknown): number {
+  const targetPoints = getOptionalNumber(value)
+
+  if (targetPoints === undefined || targetPoints < 0) {
+    return DEFAULT_TARGET_POINTS
+  }
+
+  return Math.floor(targetPoints)
 }
 
 function parseShareCodeUnit(value: unknown): ArmyPlannerUnit | null {
@@ -180,12 +201,14 @@ function parseShareCodePayload(value: unknown): DecodeArmyListShareCodeResult {
       name: list.name,
       faction: getOptionalString(list.faction),
       factionType: getOptionalString(list.factionType),
+      targetPoints: getTargetPoints(list.targetPoints),
       units: units.filter((unit): unit is ArmyPlannerUnit => unit !== null),
     },
   }
 }
 
 export function formatArmyListText(list: ArmyList): string {
+  const totalPoints = getTotalPoints(list.units)
   const unitLines = list.units.map(
     (unit) => `- ${unit.name} x${unit.quantity} - ${getSubtotal(unit)} pts`,
   )
@@ -193,7 +216,9 @@ export function formatArmyListText(list: ArmyList): string {
   return [
     `${list.name} - ${getListFactionLabel(list)}`,
     '',
-    `Total: ${getTotalPoints(list.units)} pts`,
+    `Target: ${list.targetPoints} pts`,
+    `Total: ${totalPoints} pts`,
+    getBudgetLine(totalPoints, list.targetPoints),
     `Selected units: ${getTotalUnits(list.units)}`,
     '',
     ...unitLines,
@@ -212,6 +237,7 @@ export function encodeArmyListShareCode(list: ArmyList): string {
       name: list.name,
       faction: list.faction,
       factionType: list.factionType,
+      targetPoints: list.targetPoints,
       units: list.units.map((unit) => ({
         id: unit.id,
         routeIdentifier: unit.routeIdentifier,

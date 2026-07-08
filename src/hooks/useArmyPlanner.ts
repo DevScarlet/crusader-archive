@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import type { ImportedArmyList } from '../utils/armyListSharing'
+import {
+  DEFAULT_TARGET_POINTS,
+  type ImportedArmyList,
+} from '../utils/armyListSharing'
 import type { Faction } from '../types/faction'
 import type { Unit } from '../types/unit'
 
@@ -22,6 +25,7 @@ export interface ArmyList {
   name: string
   faction?: string
   factionType?: string
+  targetPoints: number
   units: ArmyPlannerUnit[]
   createdAt: string
 }
@@ -47,6 +51,7 @@ interface UseArmyPlannerResult {
   deleteList: (listId: string) => void
   updateListName: (name: string) => boolean
   updateListFaction: (faction?: Faction) => void
+  updateTargetPoints: (targetPoints: number) => void
   addUnit: (unit: Unit) => void
   addUnitToList: (listId: string, unit: Unit) => boolean
   getUnitQuantity: (unit: Unit) => number
@@ -64,6 +69,7 @@ function createDefaultList(): ArmyList {
   return {
     id: createListId(),
     name: 'My Army List',
+    targetPoints: DEFAULT_TARGET_POINTS,
     units: [],
     createdAt: new Date().toISOString(),
   }
@@ -99,6 +105,16 @@ function getOptionalNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value)
     ? value
     : undefined
+}
+
+function getTargetPoints(value: unknown): number {
+  const targetPoints = getOptionalNumber(value)
+
+  if (targetPoints === undefined || targetPoints < 0) {
+    return DEFAULT_TARGET_POINTS
+  }
+
+  return Math.floor(targetPoints)
 }
 
 function parseArmyUnit(value: unknown): ArmyPlannerUnit | null {
@@ -150,6 +166,7 @@ function parseArmyList(value: unknown, fallbackId: string): ArmyList | null {
     name: list.name,
     faction: getOptionalString(list.faction),
     factionType: getOptionalString(list.factionType),
+    targetPoints: getTargetPoints(list.targetPoints),
     units,
     createdAt: getOptionalString(list.createdAt) ?? new Date().toISOString(),
   }
@@ -367,6 +384,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     const newList: ArmyList = {
       id: createListId(),
       name: getNextNewListName(currentState.armyLists),
+      targetPoints: DEFAULT_TARGET_POINTS,
       units: [],
       createdAt: new Date().toISOString(),
     }
@@ -413,6 +431,13 @@ export function useArmyPlanner(): UseArmyPlannerResult {
       units: faction
         ? activeList.units.filter((unit) => unit.faction === faction.name)
         : activeList.units,
+    })
+  }
+
+  function updateTargetPoints(targetPoints: number): void {
+    saveActiveList({
+      ...activeList,
+      targetPoints,
     })
   }
 
@@ -520,6 +545,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
       name: getImportedListName(list.name, currentState.armyLists),
       faction: list.faction,
       factionType: list.factionType,
+      targetPoints: list.targetPoints,
       units: list.units,
       createdAt: new Date().toISOString(),
     }
@@ -554,6 +580,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     deleteList,
     updateListName,
     updateListFaction,
+    updateTargetPoints,
     addUnit,
     addUnitToList,
     getUnitQuantity,
