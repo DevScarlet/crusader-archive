@@ -4,9 +4,16 @@ import { getFactions } from '../api/openHammerApi'
 import {
   type ArmyPlannerUnit,
   type ArmyList,
+  ARMY_PLANNER_TOAST_EVENT,
+  type ArmyPlannerToast,
   useArmyPlanner,
 } from '../hooks/useArmyPlanner'
 import type { Faction } from '../types/faction'
+import {
+  decodeArmyListShareCode,
+  encodeArmyListShareCode,
+  formatArmyListText,
+} from '../utils/armyListSharing'
 
 function getSubtotal(unit: ArmyPlannerUnit): number {
   return (unit.points ?? 0) * unit.quantity
@@ -29,6 +36,14 @@ type DestructiveConfirmation =
 
 function getUnitKey(unit: ArmyPlannerUnit): string {
   return unit.id ?? `${unit.faction}:${unit.name}`
+}
+
+function showToast(toast: ArmyPlannerToast): void {
+  window.dispatchEvent(
+    new CustomEvent<ArmyPlannerToast>(ARMY_PLANNER_TOAST_EVENT, {
+      detail: toast,
+    }),
+  )
 }
 
 function ArmyListNameField({
@@ -69,6 +84,9 @@ function ArmyPlanner() {
   const [factionsError, setFactionsError] = useState<string | null>(null)
   const [destructiveConfirmation, setDestructiveConfirmation] =
     useState<DestructiveConfirmation>(null)
+  const [isImportOpen, setIsImportOpen] = useState(false)
+  const [shareCodeInput, setShareCodeInput] = useState('')
+  const [importError, setImportError] = useState<string | null>(null)
   const {
     activeList,
     lists,
@@ -82,6 +100,7 @@ function ArmyPlanner() {
     updateQuantity,
     removeUnit,
     clearList,
+    importArmyList,
   } = useArmyPlanner()
   const sortedFactions = useMemo(
     () =>
@@ -120,6 +139,7 @@ function ArmyPlanner() {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setDestructiveConfirmation(null)
+        setIsImportOpen(false)
       }
     }
 
@@ -156,6 +176,67 @@ function ArmyPlanner() {
 
     removeUnit(unit)
     setDestructiveConfirmation(null)
+  }
+
+  async function copyToClipboard(value: string, successMessage: string) {
+    try {
+      await navigator.clipboard.writeText(value)
+      showToast({ message: successMessage })
+    } catch (error) {
+      console.error('Army list copy failed.', { error })
+      showToast({
+        message:
+          'Copy failed. Check your browser permissions and try again.',
+      })
+    }
+  }
+
+  function handleCopyText() {
+    if (activeList.units.length === 0) {
+      showToast({ message: 'Add at least one unit before copying a list.' })
+      return
+    }
+
+    void copyToClipboard(
+      formatArmyListText(activeList),
+      'Army list text copied.',
+    )
+  }
+
+  function handleCopyShareCode() {
+    if (activeList.units.length === 0) {
+      showToast({ message: 'Add at least one unit before copying a share code.' })
+      return
+    }
+
+    void copyToClipboard(
+      encodeArmyListShareCode(activeList),
+      'Army list share code copied.',
+    )
+  }
+
+  function handleOpenImport() {
+    setShareCodeInput('')
+    setImportError(null)
+    setDestructiveConfirmation(null)
+    setIsImportOpen(true)
+  }
+
+  function handleImportList() {
+    const decodedShareCode = decodeArmyListShareCode(shareCodeInput)
+
+    if (!decodedShareCode.list) {
+      setImportError(
+        decodedShareCode.errorMessage ??
+          'That share code could not be imported.',
+      )
+      return
+    }
+
+    importArmyList(decodedShareCode.list)
+    setShareCodeInput('')
+    setImportError(null)
+    setIsImportOpen(false)
   }
 
   return (
@@ -279,40 +360,114 @@ function ArmyPlanner() {
             <p>{activeList.faction ?? 'No faction selected yet'}</p>
           </div>
 
-          {activeList.units.length > 0 && (
-            <div className="clear-list-actions">
-              {destructiveConfirmation?.type === 'clear-list' ? (
-                <div className="inline-confirmation">
-                  <span>Clear this list?</span>
-                  <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={() => setDestructiveConfirmation(null)}
-                  >
-                    Cancel
-                  </button>
+          <div className="army-list-header-actions">
+            <div className="army-list-share-actions">
+              <button
+                type="button"
+                className="button-secondary"
+                disabled={activeList.units.length === 0}
+                onClick={handleCopyText}
+              >
+                Copy text
+              </button>
+              <button
+                type="button"
+                className="button-secondary"
+                disabled={activeList.units.length === 0}
+                onClick={handleCopyShareCode}
+              >
+                Copy share code
+              </button>
+              <button type="button" onClick={handleOpenImport}>
+                Import list
+              </button>
+            </div>
+
+            {activeList.units.length > 0 && (
+              <div className="clear-list-actions">
+                {destructiveConfirmation?.type === 'clear-list' ? (
+                  <div className="inline-confirmation">
+                    <span>Clear this list?</span>
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      onClick={() => setDestructiveConfirmation(null)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="button-danger"
+                      onClick={handleClearList}
+                    >
+                      Yes, clear it
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
                     className="button-danger"
-                    onClick={handleClearList}
+                    onClick={() =>
+                      setDestructiveConfirmation({ type: 'clear-list' })
+                    }
                   >
-                    Yes, clear it
+                    Clear list
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="button-danger"
-                  onClick={() =>
-                    setDestructiveConfirmation({ type: 'clear-list' })
-                  }
-                >
-                  Clear list
-                </button>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
+        {activeList.units.length === 0 && (
+          <p className="export-helper-text">
+            Add units before copying this list.
+          </p>
+        )}
+
+        {isImportOpen && (
+          <div className="import-list-panel">
+            <div className="form-field">
+              <label htmlFor="army-list-share-code">Share code</label>
+              <textarea
+                id="army-list-share-code"
+                value={shareCodeInput}
+                rows={4}
+                placeholder="Paste a Crusader Archive share code"
+                onChange={(event) => {
+                  setShareCodeInput(event.target.value)
+                  setImportError(null)
+                }}
+              />
+            </div>
+
+            {importError && (
+              <p className="field-error" role="alert">
+                {importError}
+              </p>
+            )}
+
+            <div className="dialog-actions import-list-actions">
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => {
+                  setIsImportOpen(false)
+                  setImportError(null)
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!shareCodeInput.trim()}
+                onClick={handleImportList}
+              >
+                Import list
+              </button>
+            </div>
+          </div>
+        )}
 
         {activeList.units.length === 0 ? (
           <div className="empty-army-list status-message">

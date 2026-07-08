@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ImportedArmyList } from '../utils/armyListSharing'
 import type { Faction } from '../types/faction'
 import type { Unit } from '../types/unit'
 
@@ -52,6 +53,7 @@ interface UseArmyPlannerResult {
   updateQuantity: (unit: ArmyPlannerUnit, quantity: number) => void
   removeUnit: (unit: ArmyPlannerUnit) => void
   clearList: () => void
+  importArmyList: (list: ImportedArmyList) => void
 }
 
 function createListId(): string {
@@ -282,6 +284,31 @@ function getDisplayListName(list: ArmyList): string {
   return list.name.trim() || 'Untitled army list'
 }
 
+function getImportedListName(name: string, lists: ArmyList[]): string {
+  const baseName = name.trim() || 'Imported army list'
+  const existingNames = new Set(
+    lists.map((list) => list.name.trim().toLowerCase()),
+  )
+
+  if (!existingNames.has(baseName.toLowerCase())) {
+    return baseName
+  }
+
+  const importedName = `${baseName} Imported`
+
+  if (!existingNames.has(importedName.toLowerCase())) {
+    return importedName
+  }
+
+  let listNumber = 2
+
+  while (existingNames.has(`${baseName} (${listNumber})`.toLowerCase())) {
+    listNumber += 1
+  }
+
+  return `${baseName} (${listNumber})`
+}
+
 export function useArmyPlanner(): UseArmyPlannerResult {
   const [plannerState, setPlannerState] =
     useState<ArmyPlannerState>(readPlannerState)
@@ -486,6 +513,28 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     })
   }
 
+  function importArmyList(list: ImportedArmyList): void {
+    const currentState = readPlannerState()
+    const importedList: ArmyList = {
+      id: createListId(),
+      name: getImportedListName(list.name, currentState.armyLists),
+      faction: list.faction,
+      factionType: list.factionType,
+      units: list.units,
+      createdAt: new Date().toISOString(),
+    }
+
+    savePlannerState({
+      activeArmyListId: importedList.id,
+      armyLists: [...currentState.armyLists, importedList],
+    })
+    showToast({
+      message: `${getDisplayListName(importedList)} imported.`,
+      actionLabel: 'View army',
+      actionTo: '/army-planner',
+    })
+  }
+
   const totalUnits = activeList.units.reduce(
     (total, unit) => total + unit.quantity,
     0,
@@ -511,6 +560,7 @@ export function useArmyPlanner(): UseArmyPlannerResult {
     updateQuantity,
     removeUnit,
     clearList,
+    importArmyList,
   }
 }
 
