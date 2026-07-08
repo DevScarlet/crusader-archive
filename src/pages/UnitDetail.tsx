@@ -156,7 +156,7 @@ function UnitDetail() {
         }
 
         setErrorMessage(
-          'We could not load this unit. Check your connection and try again.',
+          'OpenHammer API request failed. We could not load this unit. Check your connection and try again.',
         )
       } finally {
         if (!controller.signal.aborted) {

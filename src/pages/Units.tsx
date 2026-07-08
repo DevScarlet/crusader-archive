@@ -153,7 +153,7 @@ function Units() {
         }
 
         setFilterOptionsError(
-          'Faction filter options could not load. You can still browse units.',
+          'OpenHammer API request failed. Faction filter options could not load. You can still browse units.',
         )
       }
     }
@@ -194,7 +194,7 @@ function Units() {
         }
 
         setErrorMessage(
-          'We could not load the units. Check your connection and try again.',
+          'OpenHammer API request failed. We could not load the units. Check your connection and try again.',
         )
       } finally {
         if (!controller.signal.aborted) {

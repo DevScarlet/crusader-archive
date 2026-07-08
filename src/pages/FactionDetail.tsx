@@ -67,7 +67,7 @@ function FactionDetail() {
         }
 
         setErrorMessage(
-          `We could not load units for ${selectedFactionName}. Check your connection and try again.`,
+          `OpenHammer API request failed. We could not load units for ${selectedFactionName}. Check your connection and try again.`,
         )
       } finally {
         if (!controller.signal.aborted) {

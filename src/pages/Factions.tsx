@@ -39,7 +39,7 @@ function Factions() {
         }
 
         setErrorMessage(
-          'We could not load the factions. Check your connection and try again.',
+          'OpenHammer API request failed. We could not load the factions. Check your connection and try again.',
         )
       } finally {
         if (!controller.signal.aborted) {

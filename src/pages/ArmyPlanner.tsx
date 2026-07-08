@@ -106,7 +106,7 @@ function ArmyPlanner() {
         }
 
         setFactionsError(
-          'Faction choices could not load. You can still use the current list.',
+          'OpenHammer API request failed. Faction choices could not load. You can still use the current list.',
         )
       }
     }

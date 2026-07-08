@@ -7,6 +7,8 @@ import type {
 } from '../types/unit'
 
 const API_BASE_URL = 'https://openhammer-api-production.up.railway.app'
+const API_EDITION = '10e'
+const API_ROOT_URL = `${API_BASE_URL}/v1/${API_EDITION}`
 
 interface OpenHammerFaction {
   name: string
@@ -222,17 +224,115 @@ function addOptionalParam(
   }
 }
 
-export async function getFactions(signal?: AbortSignal): Promise<Faction[]> {
-  const response = await fetch(`${API_BASE_URL}/factions`, { signal })
+function getOpenHammerUrl(path: string, searchParams?: URLSearchParams): string {
+  const queryString = searchParams?.toString()
 
-  if (!response.ok) {
-    throw new Error(`OpenHammer API returned status ${response.status}.`)
+  return `${API_ROOT_URL}${path}${queryString ? `?${queryString}` : ''}`
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
+
+async function getResponseText(response: Response): Promise<string | undefined> {
+  try {
+    return await response.text()
+  } catch (error) {
+    console.error('OpenHammer API request failed while reading error details.', {
+      error,
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+    })
+
+    return undefined
+  }
+}
+
+async function fetchOpenHammer(
+  url: string,
+  signal?: AbortSignal,
+  allowedFailureStatuses: number[] = [],
+): Promise<Response> {
+  let response: Response
+
+  try {
+    response = await fetch(url, { signal })
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error
+    }
+
+    console.error('OpenHammer API request failed before receiving a response.', {
+      error,
+      url,
+    })
+
+    throw new Error(
+      'OpenHammer API request failed before receiving a response.',
+      { cause: error },
+    )
   }
 
-  const responseBody: unknown = await response.json()
+  if (!response.ok && !allowedFailureStatuses.includes(response.status)) {
+    const responseBody = await getResponseText(response)
+
+    console.error('OpenHammer API request failed.', {
+      responseBody,
+      status: response.status,
+      statusText: response.statusText,
+      url,
+    })
+
+    throw new Error(
+      `OpenHammer API request failed with status ${response.status}.`,
+    )
+  }
+
+  return response
+}
+
+async function getJsonResponse(
+  response: Response,
+  responseDescription: string,
+): Promise<unknown> {
+  try {
+    return await response.json()
+  } catch (error) {
+    console.error('OpenHammer API request failed while parsing JSON.', {
+      error,
+      responseDescription,
+      status: response.status,
+      url: response.url,
+    })
+
+    throw new Error(
+      `OpenHammer API request failed: ${responseDescription} response was not valid JSON.`,
+      { cause: error },
+    )
+  }
+}
+
+function throwUnexpectedResponse(
+  responseDescription: string,
+  responseBody: unknown,
+): never {
+  console.error('OpenHammer API request failed with an unexpected response.', {
+    responseBody,
+    responseDescription,
+  })
+
+  throw new Error(
+    `OpenHammer API request failed: unexpected ${responseDescription} response.`,
+  )
+}
+
+export async function getFactions(signal?: AbortSignal): Promise<Faction[]> {
+  const response = await fetchOpenHammer(getOpenHammerUrl('/factions'), signal)
+  const responseBody = await getJsonResponse(response, 'factions')
 
   if (!Array.isArray(responseBody) || !responseBody.every(isOpenHammerFaction)) {
-    throw new Error('OpenHammer API returned an unexpected factions response.')
+    throwUnexpectedResponse('factions', responseBody)
   }
 
   return responseBody.map(mapFaction)
@@ -243,19 +343,14 @@ export async function getUnitsByFaction(
   signal?: AbortSignal,
 ): Promise<Unit[]> {
   const encodedFactionName = encodeURIComponent(factionName)
-  const response = await fetch(
-    `${API_BASE_URL}/factions/${encodedFactionName}/units`,
-    { signal },
+  const response = await fetchOpenHammer(
+    getOpenHammerUrl(`/factions/${encodedFactionName}/units`),
+    signal,
   )
-
-  if (!response.ok) {
-    throw new Error(`OpenHammer API returned status ${response.status}.`)
-  }
-
-  const responseBody: unknown = await response.json()
+  const responseBody = await getJsonResponse(response, 'faction units')
 
   if (!Array.isArray(responseBody) || !responseBody.every(isOpenHammerUnit)) {
-    throw new Error('OpenHammer API returned an unexpected units response.')
+    throwUnexpectedResponse('faction units', responseBody)
   }
 
   return responseBody.map(mapUnit)
@@ -273,20 +368,14 @@ async function getUnitCount(
   addOptionalParam(searchParams, 'faction', options.faction)
   addOptionalParam(searchParams, 'faction_type', options.factionType)
 
-  const queryString = searchParams.toString()
-  const response = await fetch(
-    `${API_BASE_URL}/units/count${queryString ? `?${queryString}` : ''}`,
-    { signal },
+  const response = await fetchOpenHammer(
+    getOpenHammerUrl('/units/count', searchParams),
+    signal,
   )
-
-  if (!response.ok) {
-    throw new Error(`OpenHammer API returned status ${response.status}.`)
-  }
-
-  const responseBody: unknown = await response.json()
+  const responseBody = await getJsonResponse(response, 'unit count')
 
   if (!isOpenHammerUnitCount(responseBody)) {
-    throw new Error('OpenHammer API returned an unexpected unit count response.')
+    throwUnexpectedResponse('unit count', responseBody)
   }
 
   return responseBody.count
@@ -306,18 +395,13 @@ export async function getUnits(
   addOptionalParam(searchParams, 'sort_by', options.sortBy)
 
   const [unitResponse, totalCount] = await Promise.all([
-    fetch(`${API_BASE_URL}/units?${searchParams.toString()}`, { signal }),
+    fetchOpenHammer(getOpenHammerUrl('/units', searchParams), signal),
     getUnitCount(options, signal),
   ])
-
-  if (!unitResponse.ok) {
-    throw new Error(`OpenHammer API returned status ${unitResponse.status}.`)
-  }
-
-  const responseBody: unknown = await unitResponse.json()
+  const responseBody = await getJsonResponse(unitResponse, 'units')
 
   if (!Array.isArray(responseBody) || !responseBody.every(isOpenHammerUnit)) {
-    throw new Error('OpenHammer API returned an unexpected units response.')
+    throwUnexpectedResponse('units', responseBody)
   }
 
   return {
@@ -331,41 +415,36 @@ export async function getUnit(
   signal?: AbortSignal,
 ): Promise<Unit | null> {
   const encodedIdentifier = encodeURIComponent(unitIdentifier)
-  const unitResponse = await fetch(`${API_BASE_URL}/units/${encodedIdentifier}`, {
+  const unitResponse = await fetchOpenHammer(
+    getOpenHammerUrl(`/units/${encodedIdentifier}`),
     signal,
-  })
+    [404],
+  )
 
   if (unitResponse.ok) {
-    const responseBody: unknown = await unitResponse.json()
+    const responseBody = await getJsonResponse(unitResponse, 'unit')
 
     if (!isOpenHammerUnit(responseBody)) {
-      throw new Error('OpenHammer API returned an unexpected unit response.')
+      throwUnexpectedResponse('unit', responseBody)
     }
 
     return mapUnit(responseBody)
   }
 
-  if (unitResponse.status !== 404) {
-    throw new Error(`OpenHammer API returned status ${unitResponse.status}.`)
-  }
-
-  const searchResponse = await fetch(
-    `${API_BASE_URL}/units/search/name/${encodedIdentifier}`,
-    { signal },
+  const searchResponse = await fetchOpenHammer(
+    getOpenHammerUrl(`/units/search/name/${encodedIdentifier}`),
+    signal,
+    [404],
   )
 
-  if (!searchResponse.ok) {
-    if (searchResponse.status === 404) {
-      return null
-    }
-
-    throw new Error(`OpenHammer API returned status ${searchResponse.status}.`)
+  if (searchResponse.status === 404) {
+    return null
   }
 
-  const searchBody: unknown = await searchResponse.json()
+  const searchBody = await getJsonResponse(searchResponse, 'unit search')
 
   if (!Array.isArray(searchBody) || !searchBody.every(isOpenHammerUnit)) {
-    throw new Error('OpenHammer API returned an unexpected unit response.')
+    throwUnexpectedResponse('unit search', searchBody)
   }
 
   const exactMatch = searchBody.find(
