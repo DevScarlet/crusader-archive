@@ -339,7 +339,7 @@ function ArmyPlanner() {
         Build a simple personal roster and track your selected units and points.
       </p>
 
-      <p className="status-message">
+      <p className="status-message planner-rules-note">
         This planner does not validate official army-list rules.
       </p>
 
@@ -410,6 +410,11 @@ function ArmyPlanner() {
       </div>
 
       <div className="army-list-details-card">
+        <div className="army-section-heading">
+          <h2>List settings</h2>
+          <p>Set the basics for this roster.</p>
+        </div>
+
         <div className="army-list-settings">
           <ArmyListNameField
             key={activeList.id}
@@ -439,46 +444,49 @@ function ArmyPlanner() {
             onSaveTargetPoints={updateTargetPoints}
           />
         </div>
+      </div>
 
-        <div className="army-planner-summary">
+      <div className="army-planner-summary" aria-label="Army list summary">
+        <div>
+          <p className="summary-label">Total points</p>
+          <p className="summary-value">{totalPoints}</p>
+        </div>
+        <div>
+          <p className="summary-label">Selected units</p>
+          <p className="summary-value">{totalUnits}</p>
+        </div>
+        <div className="budget-summary">
+          <p className="summary-label">Budget</p>
           <div>
-            <p className="summary-label">Total points</p>
-            <p className="summary-value">{totalPoints}</p>
-          </div>
-          <div>
-            <p className="summary-label">Selected units</p>
-            <p className="summary-value">{totalUnits}</p>
-          </div>
-          <div className="budget-summary">
-            <p className="summary-label">Budget</p>
+            <p className="budget-summary__value">
+              {totalPoints} / {targetPoints} pts
+            </p>
             <p
               className={
                 isOverTarget
-                  ? 'budget-summary__text budget-summary__text--over'
-                  : 'budget-summary__text'
+                  ? 'budget-summary__status budget-summary__status--over'
+                  : 'budget-summary__status'
               }
             >
-              {totalPoints} / {targetPoints} pts
-              {' \u00b7 '}
               {budgetStatusText}
             </p>
+          </div>
+          <div
+            className={
+              isOverTarget
+                ? 'budget-progress budget-progress--over'
+                : 'budget-progress'
+            }
+            role="progressbar"
+            aria-label="Army list points progress"
+            aria-valuemin={0}
+            aria-valuemax={progressTargetPoints}
+            aria-valuenow={Math.min(totalPoints, progressTargetPoints)}
+          >
             <div
-              className={
-                isOverTarget
-                  ? 'budget-progress budget-progress--over'
-                  : 'budget-progress'
-              }
-              role="progressbar"
-              aria-label="Army list points progress"
-              aria-valuemin={0}
-              aria-valuemax={progressTargetPoints}
-              aria-valuenow={Math.min(totalPoints, progressTargetPoints)}
-            >
-              <div
-                className="budget-progress__bar"
-                style={{ width: `${progressValue}%` }}
-              />
-            </div>
+              className="budget-progress__bar"
+              style={{ width: `${progressValue}%` }}
+            />
           </div>
         </div>
       </div>
@@ -491,61 +499,55 @@ function ArmyPlanner() {
           </div>
 
           <div className="army-list-header-actions">
-            <div className="army-list-share-actions">
-              <button
-                type="button"
-                className="button-secondary"
-                disabled={activeList.units.length === 0}
-                onClick={handleCopyText}
-              >
-                Copy text
-              </button>
-              <button
-                type="button"
-                className="button-secondary"
-                disabled={activeList.units.length === 0}
-                onClick={handleCopyShareCode}
-              >
-                Copy share code
-              </button>
-              <button type="button" onClick={handleOpenImport}>
-                Import list
-              </button>
-            </div>
-
-            {activeList.units.length > 0 && (
-              <div className="clear-list-actions">
-                {destructiveConfirmation?.type === 'clear-list' ? (
-                  <div className="inline-confirmation">
-                    <span>Clear this list?</span>
-                    <button
-                      type="button"
-                      className="button-secondary"
-                      onClick={() => setDestructiveConfirmation(null)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="button-danger"
-                      onClick={handleClearList}
-                    >
-                      Yes, clear it
-                    </button>
-                  </div>
-                ) : (
+            <button
+              type="button"
+              className="button-secondary"
+              disabled={activeList.units.length === 0}
+              onClick={handleCopyText}
+            >
+              Copy text
+            </button>
+            <button
+              type="button"
+              className="button-secondary"
+              disabled={activeList.units.length === 0}
+              onClick={handleCopyShareCode}
+            >
+              Copy share code
+            </button>
+            <button type="button" onClick={handleOpenImport}>
+              Import list
+            </button>
+            {activeList.units.length > 0 &&
+              (destructiveConfirmation?.type === 'clear-list' ? (
+                <div className="inline-confirmation roster-clear-confirmation">
+                  <span>Clear this list?</span>
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    onClick={() => setDestructiveConfirmation(null)}
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="button"
                     className="button-danger"
-                    onClick={() =>
-                      setDestructiveConfirmation({ type: 'clear-list' })
-                    }
+                    onClick={handleClearList}
                   >
-                    Clear list
+                    Yes, clear it
                   </button>
-                )}
-              </div>
-            )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="button-danger"
+                  onClick={() =>
+                    setDestructiveConfirmation({ type: 'clear-list' })
+                  }
+                >
+                  Clear list
+                </button>
+              ))}
           </div>
         </div>
 

@@ -671,18 +671,24 @@ a:focus-visible {
   margin-bottom: 0.75rem;
 }
 
+.planner-rules-note {
+  margin: 0 0 1rem;
+  color: #555555;
+}
+
 .army-planner-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(10rem, 1fr));
   gap: 1rem;
-  margin: 0;
+  margin: 0 0 1rem;
 }
 
 .army-planner-summary > div {
-  padding: 1rem;
+  min-height: 8.25rem;
+  padding: 1.125rem;
   border: 1px solid #ddddda;
   border-radius: 0.5rem;
-  background: #f7f7f5;
+  background: #ffffff;
 }
 
 .summary-label {
@@ -699,17 +705,23 @@ a:focus-visible {
 
 .budget-summary {
   display: grid;
-  align-content: start;
+  align-content: space-between;
   gap: 0.625rem;
 }
 
-.budget-summary__text {
+.budget-summary__value {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
 }
 
-.budget-summary__text--over {
+.budget-summary__status {
+  margin: 0.25rem 0 0;
+  color: #4f6b55;
+  font-weight: 700;
+}
+
+.budget-summary__status--over {
   color: #7d2f2f;
 }
 
@@ -738,25 +750,25 @@ a:focus-visible {
 }
 
 .army-planner-toolbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) auto auto;
   align-items: flex-end;
   gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1rem;
   border: 1px solid #ddddda;
   border-radius: 0.5rem;
   background: #ffffff;
 }
 
 .army-planner-toolbar .form-field {
-  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .toolbar-confirmation-slot {
   display: flex;
   justify-content: flex-end;
-  min-width: min(100%, 22rem);
+  min-width: 0;
 }
 
 .field-error {
@@ -769,28 +781,46 @@ a:focus-visible {
 .army-list-settings {
   display: grid;
   grid-template-columns:
-    minmax(12rem, 2fr)
+    minmax(14rem, 1.35fr)
     minmax(12rem, 1fr)
-    minmax(12rem, 1fr);
+    minmax(16rem, 1.15fr);
+  align-items: start;
   gap: 1rem;
+}
+
+.army-section-heading {
   margin-bottom: 1rem;
 }
 
+.army-section-heading h2,
+.army-section-heading p {
+  margin: 0;
+}
+
+.army-section-heading h2 {
+  font-size: 1.25rem;
+}
+
+.army-section-heading p {
+  margin-top: 0.25rem;
+  color: #555555;
+}
+
 .target-points-presets {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(3.25rem, 1fr));
   gap: 0.375rem;
 }
 
 .target-points-presets button {
   min-height: 2rem;
-  padding: 0.375rem 0.625rem;
+  padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
 }
 
 .army-list-details-card,
 .army-roster-card {
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid #ddddda;
   border-radius: 0.5rem;
   background: #ffffff;
@@ -801,15 +831,16 @@ a:focus-visible {
 }
 
 .army-roster-card {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .army-list-heading-row {
   display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .army-list-heading-row h2,
@@ -822,31 +853,31 @@ a:focus-visible {
   color: #555555;
 }
 
-.clear-list-actions {
+.army-list-header-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
 }
 
-.army-list-header-actions {
-  display: grid;
-  justify-items: end;
-  gap: 0.75rem;
+.army-list-header-actions button {
+  flex: 0 0 auto;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.925rem;
+  white-space: nowrap;
 }
 
-.army-list-share-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.army-list-share-actions button[disabled],
+.army-list-header-actions button[disabled],
 .import-list-actions button[disabled] {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.roster-clear-confirmation {
+  flex: 0 0 auto;
 }
 
 .export-helper-text {
@@ -1308,6 +1339,7 @@ a:focus-visible {
   .browse-controls,
   .global-unit-controls,
   .more-filters-panel,
+  .army-planner-toolbar,
   .army-planner-summary,
   .army-list-settings,
   .favorite-unit-controls {
@@ -1320,21 +1352,19 @@ a:focus-visible {
 
   .army-planner-toolbar,
   .army-list-header-actions,
-  .army-list-share-actions,
   .unit-card-actions,
   .toast__actions {
     align-items: stretch;
   }
 
-  .army-list-header-actions,
-  .army-list-share-actions {
+  .army-list-header-actions {
+    flex-wrap: wrap;
     width: 100%;
-    justify-items: stretch;
   }
 
   .army-planner-toolbar > button,
   .toolbar-confirmation-slot,
-  .army-list-share-actions button,
+  .army-list-header-actions button,
   .unit-card-actions button,
   .toast__actions a,
   .toast__actions button {
@@ -1348,6 +1378,11 @@ a:focus-visible {
 
   .inline-confirmation {
     width: 100%;
+  }
+
+  .roster-clear-confirmation {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .results-toolbar {
