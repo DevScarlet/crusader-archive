@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getFactions } from '../api/openHammerApi'
+import UnitMetadataBadges from '../components/UnitMetadataBadges'
 import {
   type ArmyPlannerUnit,
   type ArmyList,
@@ -8,6 +9,7 @@ import {
   type ArmyPlannerToast,
   useArmyPlanner,
 } from '../hooks/useArmyPlanner'
+import { useUnitMetadata } from '../hooks/useUnitMetadata'
 import type { Faction } from '../types/faction'
 import {
   decodeArmyListShareCode,
@@ -184,6 +186,7 @@ function ArmyPlanner() {
     clearList,
     importArmyList,
   } = useArmyPlanner()
+  const { getMetadataForKey } = useUnitMetadata()
   const sortedFactions = useMemo(
     () =>
       [...factions].sort((firstFaction, secondFaction) =>
@@ -638,6 +641,13 @@ function ArmyPlanner() {
                         {unit.name}
                       </Link>
                       <span>{unit.faction}</span>
+                      <UnitMetadataBadges
+                        metadata={getMetadataForKey(
+                          unit.id ?? unit.routeIdentifier,
+                        )}
+                        compact
+                        maxTags={2}
+                      />
                     </th>
                     <td>
                       <div className="quantity-controls">

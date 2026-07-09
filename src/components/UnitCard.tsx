@@ -4,6 +4,8 @@ import type { Unit, UnitStats } from '../types/unit'
 import AddToArmyButton from './AddToArmyButton'
 import FavoriteButton from './FavoriteButton'
 import HelpTooltip from './HelpTooltip'
+import UnitMetadataBadges from './UnitMetadataBadges'
+import { getUnitMetadataKey, useUnitMetadata } from '../hooks/useUnitMetadata'
 
 interface UnitCardProps {
   unit: Unit
@@ -33,7 +35,8 @@ function UnitCard({
   canCompareMore = true,
   onToggleCompare,
 }: UnitCardProps) {
-  const unitIdentifier = unit.id ?? unit.name
+  const unitIdentifier = getUnitMetadataKey(unit)
+  const { metadata } = useUnitMetadata(unitIdentifier)
   const availableStats = statLabels.filter(
     ([statName]) => unit.stats?.[statName] !== undefined,
   )
@@ -68,6 +71,8 @@ function UnitCard({
             <HelpTooltip entry={glossary.points} />
           </p>
         )}
+
+        <UnitMetadataBadges metadata={metadata} maxTags={3} />
 
         {availableStats.length > 0 && (
           <dl className="unit-stats" aria-label={`${unit.name} stats`}>

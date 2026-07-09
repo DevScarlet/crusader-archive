@@ -3,11 +3,17 @@ import { getFactions, getUnits } from '../api/openHammerApi'
 import UnitCard from '../components/UnitCard'
 import { useComparison } from '../hooks/useComparison'
 import { useFavorites } from '../hooks/useFavorites'
+import { getUnitMetadataKey, useUnitMetadata } from '../hooks/useUnitMetadata'
 import type { Faction } from '../types/faction'
 import type { Unit } from '../types/unit'
+import {
+  type UnitMetadataTag,
+  unitMetadataTagPresets,
+} from '../types/unitMetadata'
 
 type UnitSortOption = 'name-asc' | 'name-desc' | 'points-asc' | 'points-desc'
 type UnitViewOption = 'all' | 'favorites-only' | 'favorites-first'
+type PersonalTagFilter = '' | 'has-notes' | UnitMetadataTag
 type PageButton = number | 'ellipsis'
 
 const defaultPageSize = 25
@@ -89,7 +95,7 @@ function getResultSummary(
   currentPage: number,
   pageSize: number,
   totalCount: number | null,
-  viewOption: UnitViewOption,
+  hasLocalFilters: boolean,
 ): string {
   if (fetchedUnitCount === 0) {
     return totalCount === null
@@ -100,7 +106,7 @@ function getResultSummary(
   const startResult = (currentPage - 1) * pageSize + 1
   const endResult = startResult + fetchedUnitCount - 1
 
-  if (viewOption !== 'all') {
+  if (hasLocalFilters) {
     const totalText =
       totalCount === null
         ? 'the current API page'
@@ -130,6 +136,8 @@ function Units() {
   const [selectedFaction, setSelectedFaction] = useState('')
   const [selectedFactionType, setSelectedFactionType] = useState('')
   const [selectedUnitType, setSelectedUnitType] = useState('')
+  const [selectedPersonalTagFilter, setSelectedPersonalTagFilter] =
+    useState<PersonalTagFilter>('')
   const [viewOption, setViewOption] = useState<UnitViewOption>('all')
   const [sortOption, setSortOption] = useState<UnitSortOption>('name-asc')
   const [pageSize, setPageSize] = useState(defaultPageSize)
@@ -137,6 +145,7 @@ function Units() {
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false)
   const { isFavorite, toggleFavorite } = useFavorites()
   const { isCompared, canAddUnit, toggleComparison } = useComparison()
+  const { getMetadataForKey } = useUnitMetadata()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -230,6 +239,7 @@ function Units() {
     setSelectedFaction('')
     setSelectedFactionType('')
     setSelectedUnitType('')
+    setSelectedPersonalTagFilter('')
     setViewOption('all')
     setSortOption('name-asc')
     setPageSize(defaultPageSize)
@@ -246,22 +256,47 @@ function Units() {
     resetToFirstPage()
   }
 
+  function clearPersonalTagFilter() {
+    setSelectedPersonalTagFilter('')
+    resetToFirstPage()
+  }
+
   const factionNames = factions.map((faction) => faction.name)
   const factionTypes = getUniqueSortedValues(
     factions.map((faction) => faction.factionType),
   )
   const activeAdvancedFilterCount =
-    Number(Boolean(selectedFactionType)) + Number(Boolean(selectedUnitType))
+    Number(Boolean(selectedFactionType)) +
+    Number(Boolean(selectedUnitType)) +
+    Number(Boolean(selectedPersonalTagFilter))
   const hasActiveFilters =
     Boolean(searchTerm.trim()) ||
     Boolean(selectedFaction) ||
     Boolean(selectedFactionType) ||
     Boolean(selectedUnitType) ||
+    Boolean(selectedPersonalTagFilter) ||
     viewOption !== 'all'
+  const selectedPersonalTagFilterLabel =
+    selectedPersonalTagFilter === 'has-notes'
+      ? 'Has notes'
+      : selectedPersonalTagFilter
   // Favorites live in localStorage, so the API cannot sort or filter by them.
-  // Keep that behavior limited to the units already fetched for this page.
+  // Keep local-only filters limited to the units already fetched for this page.
   const visibleUnits = units
     .filter((unit) => viewOption !== 'favorites-only' || isFavorite(unit))
+    .filter((unit) => {
+      if (!selectedPersonalTagFilter) {
+        return true
+      }
+
+      const metadata = getMetadataForKey(getUnitMetadataKey(unit))
+
+      if (selectedPersonalTagFilter === 'has-notes') {
+        return metadata.note.trim().length > 0
+      }
+
+      return metadata.tags.includes(selectedPersonalTagFilter)
+    })
     .sort((firstUnit, secondUnit) => {
       if (viewOption !== 'favorites-first') {
         return 0
@@ -281,7 +316,7 @@ function Units() {
     currentPage,
     pageSize,
     totalCount,
-    viewOption,
+    viewOption !== 'all' || Boolean(selectedPersonalTagFilter),
   )
 
   return (
@@ -388,13 +423,19 @@ function Units() {
 
           {selectedFactionType && (
             <button type="button" onClick={clearFactionTypeFilter}>
-              {selectedFactionType} ×
+              {selectedFactionType} x
             </button>
           )}
 
           {selectedUnitType && (
             <button type="button" onClick={clearUnitTypeFilter}>
-              {selectedUnitType} ×
+              {selectedUnitType} x
+            </button>
+          )}
+
+          {selectedPersonalTagFilter && (
+            <button type="button" onClick={clearPersonalTagFilter}>
+              {selectedPersonalTagFilterLabel} x
             </button>
           )}
 
@@ -442,6 +483,28 @@ function Units() {
               {unitTypes.map((unitType) => (
                 <option key={unitType} value={unitType}>
                   {unitType}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="global-unit-personal-tag">Personal tag</label>
+            <select
+              id="global-unit-personal-tag"
+              value={selectedPersonalTagFilter}
+              onChange={(event) => {
+                setSelectedPersonalTagFilter(
+                  event.target.value as PersonalTagFilter,
+                )
+                resetToFirstPage()
+              }}
+            >
+              <option value="">All tags</option>
+              <option value="has-notes">Has notes</option>
+              {unitMetadataTagPresets.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
                 </option>
               ))}
             </select>
@@ -507,7 +570,7 @@ function Units() {
 
           {!isLoading && units.length > 0 && visibleUnits.length === 0 && (
             <p className="status-message">
-              No units on this page match the current favorites view.
+              No units on this page match the current local filters.
             </p>
           )}
 

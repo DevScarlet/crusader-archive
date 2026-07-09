@@ -6,7 +6,12 @@ import FavoriteButton from '../components/FavoriteButton'
 import HelpTooltip from '../components/HelpTooltip'
 import { glossary } from '../data/glossary'
 import { useFavorites } from '../hooks/useFavorites'
+import { getUnitMetadataKey, useUnitMetadata } from '../hooks/useUnitMetadata'
 import type { Unit, UnitStats, UnitWeapon } from '../types/unit'
+import {
+  type UnitMetadataTag,
+  unitMetadataTagPresets,
+} from '../types/unitMetadata'
 
 const statLabels: Array<
   [keyof UnitStats, string, (typeof glossary)[keyof typeof glossary]]
@@ -112,6 +117,130 @@ function WeaponList({ title, weapons }: WeaponListProps) {
   )
 }
 
+interface PersonalUnitNotesProps {
+  unitKey: string
+}
+
+function PersonalUnitNotes({ unitKey }: PersonalUnitNotesProps) {
+  const { metadata, saveNote, clearNote, toggleTag } =
+    useUnitMetadata(unitKey)
+  const [noteDraft, setNoteDraft] = useState({
+    savedNote: metadata.note,
+    unitKey,
+    value: metadata.note,
+  })
+  const [saveMessage, setSaveMessage] = useState<{
+    unitKey: string
+    value: string
+  } | null>(null)
+  const draftNote =
+    noteDraft.unitKey === unitKey && noteDraft.savedNote === metadata.note
+      ? noteDraft.value
+      : metadata.note
+  const visibleSaveMessage =
+    saveMessage?.unitKey === unitKey ? saveMessage.value : null
+
+  function handleSaveNote() {
+    saveNote(draftNote)
+    setNoteDraft({
+      savedNote: draftNote,
+      unitKey,
+      value: draftNote,
+    })
+    setSaveMessage({
+      unitKey,
+      value: 'Personal note saved.',
+    })
+  }
+
+  function handleClearNote() {
+    clearNote()
+    setNoteDraft({
+      savedNote: '',
+      unitKey,
+      value: '',
+    })
+    setSaveMessage({
+      unitKey,
+      value: 'Personal note cleared.',
+    })
+  }
+
+  function handleToggleTag(tag: UnitMetadataTag) {
+    toggleTag(tag)
+    setSaveMessage({
+      unitKey,
+      value: 'Personal tags updated.',
+    })
+  }
+
+  return (
+    <section className="detail-section personal-notes-section">
+      <h2>Personal notes</h2>
+      <div className="personal-notes-card">
+        <div className="form-field">
+          <label htmlFor="unit-personal-note">Note</label>
+          <textarea
+            id="unit-personal-note"
+            value={draftNote}
+            rows={5}
+            placeholder="Add reminders, loadout ideas, painting notes, or buying plans."
+            onChange={(event) => {
+              setNoteDraft({
+                savedNote: metadata.note,
+                unitKey,
+                value: event.target.value,
+              })
+              setSaveMessage(null)
+            }}
+          />
+        </div>
+
+        <div className="personal-note-actions">
+          <button
+            type="button"
+            disabled={draftNote === metadata.note}
+            onClick={handleSaveNote}
+          >
+            Save note
+          </button>
+          <button
+            type="button"
+            className="button-secondary"
+            disabled={!draftNote.trim() && !metadata.note.trim()}
+            onClick={handleClearNote}
+          >
+            Clear note
+          </button>
+        </div>
+
+        <div>
+          <p className="personal-tags-label">Tags</p>
+          <div className="unit-tag-toggle-list" aria-label="Personal tags">
+            {unitMetadataTagPresets.map((tag) => (
+              <button
+                type="button"
+                key={tag}
+                className="unit-tag-toggle"
+                aria-pressed={metadata.tags.includes(tag)}
+                onClick={() => handleToggleTag(tag)}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {visibleSaveMessage && (
+          <p className="metadata-save-message" role="status">
+            {visibleSaveMessage}
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
 function UnitDetail() {
   const { unitIdentifier: encodedUnitIdentifier } = useParams<{
     unitIdentifier: string
@@ -177,6 +306,9 @@ function UnitDetail() {
   const availableStats = statLabels.filter(
     ([statName]) => unit?.stats?.[statName] !== undefined,
   )
+  const unitMetadataKey = unit
+    ? getUnitMetadataKey(unit)
+    : unitIdentifier ?? undefined
 
   return (
     <section aria-labelledby="unit-heading">
@@ -256,6 +388,8 @@ function UnitDetail() {
           )}
 
           <AddToArmyButton unit={unit} />
+
+          {unitMetadataKey && <PersonalUnitNotes unitKey={unitMetadataKey} />}
 
           {availableStats.length > 0 && (
             <dl className="unit-stats unit-detail__stats">
